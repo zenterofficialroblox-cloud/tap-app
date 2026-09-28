@@ -1,0 +1,2730 @@
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
+import {
+  Link,
+  NavLink,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+import {
+  ArrowUpRight,
+  BadgeCheck,
+  Check,
+  ChevronRight,
+  Copy,
+  Eye,
+  EyeOff,
+  Globe2,
+  LayoutGrid,
+  Link2,
+  Lock,
+  LogOut,
+  Menu,
+  Palette,
+  QrCode,
+  Search,
+  Settings,
+  Share2,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+  X,
+} from "lucide-react";
+import githubIcon from "simple-icons/icons/github.svg";
+import gitlabIcon from "simple-icons/icons/gitlab.svg";
+import discordIcon from "simple-icons/icons/discord.svg";
+import spotifyIcon from "simple-icons/icons/spotify.svg";
+import figmaIcon from "simple-icons/icons/figma.svg";
+import youtubeIcon from "simple-icons/icons/youtube.svg";
+import instagramIcon from "simple-icons/icons/instagram.svg";
+import tiktokIcon from "simple-icons/icons/tiktok.svg";
+import twitchIcon from "simple-icons/icons/twitch.svg";
+import xIcon from "simple-icons/icons/x.svg";
+import snapchatIcon from "simple-icons/icons/snapchat.svg";
+import robloxIcon from "simple-icons/icons/roblox.svg";
+import steamIcon from "simple-icons/icons/steam.svg";
+import playstationIcon from "simple-icons/icons/playstation.svg";
+import epicIcon from "simple-icons/icons/epicgames.svg";
+import facebookIcon from "simple-icons/icons/facebook.svg";
+import threadsIcon from "simple-icons/icons/threads.svg";
+import mastodonIcon from "simple-icons/icons/mastodon.svg";
+import blueskyIcon from "simple-icons/icons/bluesky.svg";
+import redditIcon from "simple-icons/icons/reddit.svg";
+import pinterestIcon from "simple-icons/icons/pinterest.svg";
+import whatsappIcon from "simple-icons/icons/whatsapp.svg";
+import telegramIcon from "simple-icons/icons/telegram.svg";
+import signalIcon from "simple-icons/icons/signal.svg";
+import behanceIcon from "simple-icons/icons/behance.svg";
+import dribbbleIcon from "simple-icons/icons/dribbble.svg";
+import soundcloudIcon from "simple-icons/icons/soundcloud.svg";
+import applemusicIcon from "simple-icons/icons/applemusic.svg";
+import mediumIcon from "simple-icons/icons/medium.svg";
+import substackIcon from "simple-icons/icons/substack.svg";
+import notionIcon from "simple-icons/icons/notion.svg";
+import patreonIcon from "simple-icons/icons/patreon.svg";
+import kickIcon from "simple-icons/icons/kick.svg";
+import letterboxdIcon from "simple-icons/icons/letterboxd.svg";
+import stravaIcon from "simple-icons/icons/strava.svg";
+import tumblrIcon from "simple-icons/icons/tumblr.svg";
+import devtoIcon from "simple-icons/icons/devdotto.svg";
+import stackoverflowIcon from "simple-icons/icons/stackoverflow.svg";
+import replitIcon from "simple-icons/icons/replit.svg";
+import itchioIcon from "simple-icons/icons/itchdotio.svg";
+import eaIcon from "simple-icons/icons/ea.svg";
+import riotgamesIcon from "simple-icons/icons/riotgames.svg";
+import kofiIcon from "simple-icons/icons/kofi.svg";
+import bandcampIcon from "simple-icons/icons/bandcamp.svg";
+import lastfmIcon from "simple-icons/icons/lastdotfm.svg";
+import vimeoIcon from "simple-icons/icons/vimeo.svg";
+import dailymotionIcon from "simple-icons/icons/dailymotion.svg";
+import unsplashIcon from "simple-icons/icons/unsplash.svg";
+import goodreadsIcon from "simple-icons/icons/goodreads.svg";
+import duolingoIcon from "simple-icons/icons/duolingo.svg";
+import chesscomIcon from "simple-icons/icons/chessdotcom.svg";
+import battlenetIcon from "simple-icons/icons/battledotnet.svg";
+import ubisoftIcon from "simple-icons/icons/ubisoft.svg";
+import gogIcon from "simple-icons/icons/gogdotcom.svg";
+import faceitIcon from "simple-icons/icons/faceit.svg";
+import curseforgeIcon from "simple-icons/icons/curseforge.svg";
+import modrinthIcon from "simple-icons/icons/modrinth.svg";
+import osuIcon from "simple-icons/icons/osu.svg";
+import lichessIcon from "simple-icons/icons/lichess.svg";
+import valorantIcon from "simple-icons/icons/valorant.svg";
+import counterstrikeIcon from "simple-icons/icons/counterstrike.svg";
+import leagueIcon from "simple-icons/icons/leagueoflegends.svg";
+import pubgIcon from "simple-icons/icons/pubg.svg";
+import fortniteIcon from "simple-icons/icons/fortnite.svg";
+import bitbucketIcon from "simple-icons/icons/bitbucket.svg";
+import stackblitzIcon from "simple-icons/icons/stackblitz.svg";
+import glitchIcon from "simple-icons/icons/glitch.svg";
+import npmIcon from "simple-icons/icons/npm.svg";
+import pypiIcon from "simple-icons/icons/pypi.svg";
+import dockerIcon from "simple-icons/icons/docker.svg";
+import hackerrankIcon from "simple-icons/icons/hackerrank.svg";
+import leetcodeIcon from "simple-icons/icons/leetcode.svg";
+import codewarsIcon from "simple-icons/icons/codewars.svg";
+import kaggleIcon from "simple-icons/icons/kaggle.svg";
+import huggingfaceIcon from "simple-icons/icons/huggingface.svg";
+import gitbookIcon from "simple-icons/icons/gitbook.svg";
+import hashnodeIcon from "simple-icons/icons/hashnode.svg";
+import producthuntIcon from "simple-icons/icons/producthunt.svg";
+import codeforcesIcon from "simple-icons/icons/codeforces.svg";
+import freecodecampIcon from "simple-icons/icons/freecodecamp.svg";
+import hacktheboxIcon from "simple-icons/icons/hackthebox.svg";
+import tryhackmeIcon from "simple-icons/icons/tryhackme.svg";
+import {
+  badges,
+  demoCards,
+  demoConnections,
+  demoProfile,
+  emptyProfile,
+} from "./data/demo";
+import {
+  avatarInitials,
+  detectProviderFromUrl,
+  hasValidDestination,
+  isDemoUsername,
+  isHexColor,
+  isProfileComplete,
+  levelFromXp,
+  parseProviderInput,
+  passwordSchema,
+  publicSearchHref,
+  tapHomeRoute,
+  usernameSchema,
+} from "./lib/core";
+import { filterProviders, providerById, providers } from "./lib/providers";
+import {
+  checkUsername,
+  connectOAuth,
+  deleteAccount,
+  getInitialSession,
+  getPublicProfile,
+  isSupabaseConfigured,
+  loadAppData,
+  loadVerifiedStats,
+  onAuthChange,
+  resendVerification,
+  saveCards,
+  saveCurrentProfile,
+  saveFeaturedBadges,
+  searchProfiles,
+  signIn,
+  signUp,
+  supabase,
+  syncConnections,
+  uploadAvatar,
+  uploadConnectionIcon,
+  refreshVerifiedStats,
+} from "./services/supabase";
+import type {
+  Connection,
+  Profile,
+  ProfileSearchResult,
+  ProviderDefinition,
+  TapCard,
+  ProviderId,
+  VerifiedStat,
+  VerifiedXpSummary,
+} from "./types";
+import { canRefreshAt, cooldownLabel, refreshStatusLabel, revealDelay, verifiedXpSummary } from "./lib/verifiedStats";
+
+const StoreContext = ({ children }: { children: ReactNode }) => {
+  const [ready, setReady] = useState(!isSupabaseConfigured);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [profile, setProfile] = useState<Profile>(
+    isSupabaseConfigured ? emptyProfile : demoProfile,
+  );
+  const [connections, setConnections] = useState<Connection[]>(
+    isSupabaseConfigured ? [] : demoConnections,
+  );
+  const [cards, setCards] = useState<TapCard[]>(
+    isSupabaseConfigured ? [] : demoCards,
+  );
+  const hydrated = useRef(false);
+  const hydrate = async () => {
+    if (!isSupabaseConfigured) return;
+    setReady(false);
+    setLoadError("");
+    try {
+      const data = await loadAppData();
+      setProfile(data.profile);
+      setConnections(data.connections);
+      setCards(data.cards);
+      setAuthenticated(true);
+      hydrated.current = true;
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "Could not load your TAP.",
+      );
+    } finally {
+      setReady(true);
+    }
+  };
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    let active = true;
+    getInitialSession()
+      .then((session) => {
+        if (!active) return;
+        if (session) {
+          setAuthenticated(true);
+          void hydrate();
+        } else {
+          setAuthenticated(false);
+          setReady(true);
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setLoadError(error.message);
+          setReady(true);
+        }
+      });
+    const unsubscribe = onAuthChange((session, event) => {
+      if (!active) return;
+      setAuthenticated(Boolean(session));
+      if (session && ["SIGNED_IN", "USER_UPDATED"].includes(event))
+        void hydrate();
+      if (!session) {
+        setProfile(emptyProfile);
+        setConnections([]);
+        setCards([]);
+        setReady(true);
+      }
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+  useEffect(() => {
+    if (!hydrated.current || !authenticated) return;
+    let active = true;
+    const timer = setTimeout(async () => {
+      const connectionError = await syncConnections(connections);
+      if (!active) return;
+      if (connectionError) {
+        setLoadError(connectionError);
+        return;
+      }
+      const cardError = await saveCards(cards);
+      if (active && cardError) setLoadError(cardError);
+    }, 500);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [connections, cards, authenticated]);
+  return (
+    <TapContext.Provider
+      value={{
+        profile,
+        setProfile,
+        connections,
+        setConnections,
+        cards,
+        setCards,
+        ready,
+        authenticated,
+        loadError,
+        reload: hydrate,
+        realMode: isSupabaseConfigured,
+      }}
+    >
+      {children}
+    </TapContext.Provider>
+  );
+};
+import { createContext, useContext } from "react";
+type TapStore = {
+  profile: Profile;
+  setProfile: Dispatch<SetStateAction<Profile>>;
+  connections: Connection[];
+  setConnections: Dispatch<SetStateAction<Connection[]>>;
+  cards: TapCard[];
+  setCards: Dispatch<SetStateAction<TapCard[]>>;
+  ready: boolean;
+  authenticated: boolean;
+  loadError: string;
+  reload: () => Promise<void>;
+  realMode: boolean;
+};
+const TapContext = createContext<TapStore | null>(null);
+const useTap = () => useContext(TapContext)!;
+
+function Logo() {
+  const { authenticated, profile, ready, realMode } = useTap();
+  const home = tapHomeRoute({
+    realMode,
+    ready,
+    authenticated,
+    complete: isProfileComplete(profile),
+  });
+  return (
+    <Link className="logo" to={home} aria-label="TAP home">
+      <span>T</span>TAP
+    </Link>
+  );
+}
+function Button({
+  children,
+  tone = "primary",
+  className = "",
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  tone?: "primary" | "secondary" | "ghost";
+}) {
+  return (
+    <button className={`btn btn-${tone} ${className}`} {...props}>
+      {children}
+    </button>
+  );
+}
+const brandIcons: Partial<Record<ProviderId, string>> = {
+  github: githubIcon,
+  gitlab: gitlabIcon,
+  discord: discordIcon,
+  spotify: spotifyIcon,
+  figma: figmaIcon,
+  youtube: youtubeIcon,
+  instagram: instagramIcon,
+  tiktok: tiktokIcon,
+  twitch: twitchIcon,
+  x: xIcon,
+  snapchat: snapchatIcon,
+  roblox: robloxIcon,
+  steam: steamIcon,
+  playstation: playstationIcon,
+  epic: epicIcon,
+  facebook: facebookIcon,
+  threads: threadsIcon,
+  mastodon: mastodonIcon,
+  bluesky: blueskyIcon,
+  reddit: redditIcon,
+  pinterest: pinterestIcon,
+  whatsapp: whatsappIcon,
+  telegram: telegramIcon,
+  signal: signalIcon,
+  behance: behanceIcon,
+  dribbble: dribbbleIcon,
+  soundcloud: soundcloudIcon,
+  applemusic: applemusicIcon,
+  medium: mediumIcon,
+  substack: substackIcon,
+  notion: notionIcon,
+  patreon: patreonIcon,
+  kick: kickIcon,
+  letterboxd: letterboxdIcon,
+  strava: stravaIcon,
+  tumblr:tumblrIcon,devto:devtoIcon,stackoverflow:stackoverflowIcon,replit:replitIcon,itchio:itchioIcon,ea:eaIcon,riotgames:riotgamesIcon,kofi:kofiIcon,bandcamp:bandcampIcon,lastfm:lastfmIcon,vimeo:vimeoIcon,dailymotion:dailymotionIcon,unsplash:unsplashIcon,goodreads:goodreadsIcon,duolingo:duolingoIcon,chesscom:chesscomIcon,
+  battlenet:battlenetIcon,ubisoft:ubisoftIcon,gog:gogIcon,faceit:faceitIcon,curseforge:curseforgeIcon,modrinth:modrinthIcon,osu:osuIcon,lichess:lichessIcon,valorant:valorantIcon,counterstrike:counterstrikeIcon,leagueoflegends:leagueIcon,pubg:pubgIcon,fortnite:fortniteIcon,
+  bitbucket:bitbucketIcon,stackblitz:stackblitzIcon,glitch:glitchIcon,npm:npmIcon,pypi:pypiIcon,dockerhub:dockerIcon,hackerrank:hackerrankIcon,leetcode:leetcodeIcon,codewars:codewarsIcon,kaggle:kaggleIcon,huggingface:huggingfaceIcon,gitbook:gitbookIcon,hashnode:hashnodeIcon,producthunt:producthuntIcon,codeforces:codeforcesIcon,freecodecamp:freecodecampIcon,hackthebox:hacktheboxIcon,tryhackme:tryhackmeIcon,
+};
+function ProviderMark({ id, iconUrl }: { id: ProviderId; iconUrl?: string }) {
+  const p = providerById(id);
+  const icon = brandIcons[id];
+  const [failed, setFailed] = useState("");
+  const custom = iconUrl && failed !== iconUrl;
+  return (
+    <span
+      className="provider-mark"
+      style={{ "--provider": p.accent } as React.CSSProperties}
+    >
+      {custom ? (
+        <img src={iconUrl} onError={() => setFailed(iconUrl)} alt="" />
+      ) : icon ? (
+        <img className="brand-icon" src={icon} alt="" />
+      ) : id === "website" || id === "custom" ? (
+        <Globe2 />
+      ) : (
+        <b>{p.short}</b>
+      )}
+    </span>
+  );
+}
+function Avatar({
+  profile,
+  large = false,
+}: {
+  profile: Profile;
+  large?: boolean;
+}) {
+  const [failed, setFailed] = useState("");
+  const custom =
+    profile.avatarMode === "custom" &&
+    profile.avatarUrl &&
+    failed !== profile.avatarUrl;
+  return (
+    <div
+      className={`avatar avatar-${profile.defaultAvatarId} ${large ? "avatar-large" : ""}`}
+    >
+      {custom ? (
+        <img
+          src={profile.avatarUrl}
+          onError={() => setFailed(profile.avatarUrl || "")}
+          alt=""
+        />
+      ) : profile.avatarMode === "default" ? (
+        <span className="avatar-orbit">
+          <i />
+        </span>
+      ) : (
+        avatarInitials(profile.displayName)
+      )}
+    </div>
+  );
+}
+function XPBar({ xp }: { xp: number }) {
+  const l = levelFromXp(xp);
+  return (
+    <div className="xp">
+      <div className="xp-label">
+        <strong>LEVEL {l.level}</strong>
+        <span>
+          {l.current} / {l.required} XP
+        </span>
+      </div>
+      <div className="xp-track">
+        <i style={{ width: `${l.progress}%` }} />
+      </div>
+    </div>
+  );
+}
+function RevealItem({children,index=0}:{children:ReactNode;index?:number}){
+  const ref=useRef<HTMLDivElement>(null);const [visible,setVisible]=useState(false)
+  useEffect(()=>{const node=ref.current;if(!node)return;const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('reduce-motion');if(reduced){const timer=setTimeout(()=>setVisible(true),0);return()=>clearTimeout(timer)}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setVisible(true);observer.disconnect()}},{threshold:.18});observer.observe(node);return()=>observer.disconnect()},[])
+  return <div ref={ref} className={`reveal-item ${visible?'is-visible':''}`} style={{'--reveal-delay':`${revealDelay(index)}ms`} as React.CSSProperties}>{children}</div>
+}
+function ProfileCard({
+  compact = false,
+  card,
+  interactive = true,
+}: {
+  compact?: boolean;
+  card?: TapCard;
+  interactive?: boolean;
+}) {
+  const { profile, connections, cards } = useTap();
+  const active = card || cards[0];
+  const shown = connections
+    .filter((c) => c.visible && active?.connectionIds.includes(c.id))
+    .sort(
+      (a, b) =>
+        (active?.connectionIds.indexOf(a.id) ?? a.position) -
+        (active?.connectionIds.indexOf(b.id) ?? b.position),
+    );
+  return (
+    <article
+      className={`profile-card theme-${profile.themeId} ${compact ? "profile-card-compact" : ""}`}
+      style={{ "--accent": profile.accentColor } as React.CSSProperties}
+    >
+      <div className="card-shine" />
+      <div className="profile-identity">
+        <Avatar profile={profile} large />
+        <h2 title={profile.displayName}>{profile.displayName}</h2>
+        <p className="handle" title={`@${profile.username}`}>
+          @{profile.username}
+        </p>
+        {profile.bio && <p className="bio">{profile.bio}</p>}
+        {profile.featuredBadges.length > 0 && (
+          <div className="badge-row">
+            {profile.featuredBadges.slice(0, 3).map((b) => (
+              <span key={b}>✦ {badges.find((x) => x[0] === b)?.[1]}</span>
+            ))}
+          </div>
+        )}
+      </div>
+      {shown.length > 0 ? (
+        <div
+          className={`profile-links ${interactive ? "" : "demo-links"}`}
+          tabIndex={interactive && shown.length > 4 ? 0 : undefined}
+          aria-label="Connected profiles"
+        >
+          {shown.map((c,index) =>
+            <RevealItem key={c.id} index={index}>{interactive && hasValidDestination(c.profileUrl) ? (
+              <a
+                href={c.profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ProviderMark id={c.provider} iconUrl={c.iconUrl} />
+                <span>
+                  {c.displayLabel}
+                  <small title={c.handle}>{c.handle && `@${c.handle}`}</small>
+                </span>
+                <ArrowUpRight size={16} />
+              </a>
+            ) : (
+              <div className="profile-link-static">
+                <ProviderMark id={c.provider} iconUrl={c.iconUrl} />
+                <span>
+                  {c.displayLabel}
+                  <small title={c.handle}>{c.handle && `@${c.handle}`}</small>
+                </span>
+              </div>
+            )}</RevealItem>,
+          )}
+        </div>
+      ) : (
+        <div className="profile-empty">
+          <Link2 />
+          <strong>
+            Your TAP is ready.
+            <br />
+            Add your first connection.
+          </strong>
+          {!compact && <Link to="/connections">ADD CONNECTION</Link>}
+        </div>
+      )}
+      {!compact && <XPBar xp={profile.xp} />}
+    </article>
+  );
+}
+function DemoProfileCard() {
+  const store = useTap();
+  return (
+    <TapContext.Provider
+      value={{
+        ...store,
+        profile: demoProfile,
+        connections: demoConnections,
+        cards: demoCards,
+      }}
+    >
+      <ProfileCard compact interactive={false} />
+    </TapContext.Provider>
+  );
+}
+
+function Landing() {
+  return (
+    <main className="landing">
+      <header className="topbar">
+        <Logo />
+        <nav>
+          <Link to="/login">Sign in</Link>
+          <Link className="btn btn-primary" to="/register">
+            Create my TAP
+          </Link>
+        </nav>
+      </header>
+      <section className="hero">
+        <div className="hero-copy">
+          <div className="eyebrow">
+            <Sparkles size={15} /> Your identity, one tap away
+          </div>
+          <h1>
+            Create your identity.
+            <br />
+            <span>Share it instantly.</span>
+          </h1>
+          <p>
+            Build a profile that actually feels like you. Connect your worlds,
+            choose what is public, then share by link or QR.
+          </p>
+          <div className="hero-actions">
+            <Link className="btn btn-primary" to="/register">
+              CREATE MY TAP <ChevronRight size={18} />
+            </Link>
+            <Link className="btn btn-secondary" to="/login">
+              SIGN IN
+            </Link>
+          </div>
+          <div className="service-cloud">
+            {providers.slice(0, 8).map((p) => (
+              <span key={p.id}>
+                <ProviderMark id={p.id} />
+                {p.name}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="hero-card">
+          <DemoProfileCard />
+          <span className="floating-pill pill-one">✦ LEVEL 12</span>
+          <span className="floating-pill pill-two">
+            <QrCode size={16} /> READY TO SHARE
+          </span>
+        </div>
+      </section>
+      <section className="steps">
+        {[
+          ["CREATE", "Customize your identity."],
+          ["CONNECT", "Add the places people can find you."],
+          ["TAP", "Share your profile in seconds."],
+        ].map((s, i) => (
+          <article key={s[0]}>
+            <b>0{i + 1}</b>
+            <h3>{s[0]}</h3>
+            <p>{s[1]}</p>
+          </article>
+        ))}
+      </section>
+    </main>
+  );
+}
+
+const accents = [
+  ["Violet", "#8B5CF6"],
+  ["Blue", "#3B82F6"],
+  ["Cyan", "#06B6D4"],
+  ["Green", "#22C55E"],
+  ["Yellow", "#EAB308"],
+  ["Orange", "#F97316"],
+  ["Red", "#EF4444"],
+  ["Pink", "#EC4899"],
+] as const;
+function AccentPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [custom, setCustom] = useState(
+    !accents.some(([, hex]) => hex.toLowerCase() === value.toLowerCase()),
+  );
+  const [hex, setHex] = useState(value.toUpperCase());
+  const update = (next: string) => {
+    setHex(next.toUpperCase());
+    if (isHexColor(next)) onChange(next.toUpperCase());
+  };
+  return (
+    <fieldset className="accent-picker">
+      <legend>Accent color</legend>
+      <div className="swatch-grid">
+        {accents.map(([name, color]) => (
+          <button
+            type="button"
+            aria-label={name}
+            aria-pressed={value.toLowerCase() === color.toLowerCase()}
+            className="color-swatch"
+            style={{ "--swatch": color } as React.CSSProperties}
+            onClick={() => {
+              setCustom(false);
+              update(color);
+            }}
+            key={name}
+          >
+            <i />
+            <span>{name}</span>
+            {value.toLowerCase() === color.toLowerCase() && <Check />}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={`custom-swatch ${custom ? "selected" : ""}`}
+          onClick={() => setCustom(!custom)}
+        >
+          ＋<span>Custom</span>
+        </button>
+      </div>
+      {custom && (
+        <div className="custom-color-panel">
+          <div
+            className="color-preview"
+            style={{ background: isHexColor(hex) ? hex : value }}
+          />
+          <label>
+            HEX
+            <div className="hex-field">
+              <span>#</span>
+              <input
+                value={hex.replace("#", "")}
+                maxLength={6}
+                onChange={(e) =>
+                  update(`#${e.target.value.replace(/[^0-9a-f]/gi, "")}`)
+                }
+                aria-invalid={!isHexColor(hex)}
+              />
+            </div>
+          </label>
+          <small>
+            {isHexColor(hex)
+              ? "Preview updates instantly."
+              : "Enter six hexadecimal characters."}
+          </small>
+        </div>
+      )}
+    </fieldset>
+  );
+}
+const themes = [
+  ["default", "Default", "Clean violet depth"],
+  ["neon", "Neon", "Electric cyan edge"],
+  ["galaxy", "Galaxy", "Deep cosmic gradient"],
+  ["pixel", "Pixel", "Crisp retro blocks"],
+  ["frost", "Frost", "Cool glass surface"],
+] as const;
+function ThemePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <fieldset className="theme-picker">
+      <legend>Theme</legend>
+      <div className="theme-cards">
+        {themes.map(([id, name, desc]) => (
+          <button
+            type="button"
+            className={value === id ? "selected" : ""}
+            onClick={() => onChange(id)}
+            aria-pressed={value === id}
+            key={id}
+          >
+            <i className={`theme-preview ${id}`}>
+              <b />
+              <span />
+              <em />
+            </i>
+            <strong>{name}</strong>
+            <small>{desc}</small>
+            {value === id && <Check />}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+const avatarStyles = ["violet", "ocean", "sunset", "neon", "frost"] as const;
+function AvatarPicker({
+  profile,
+  onChange,
+  onUpload,
+}: {
+  profile: Profile;
+  onChange: (profile: Profile) => void;
+  onUpload: (file?: File) => void;
+}) {
+  return (
+    <fieldset className="avatar-choice">
+      <legend>Profile picture</legend>
+      <div className="avatar-current">
+        <Avatar profile={profile} large />
+        <div>
+          <strong>Choose your look</strong>
+          <small>Use a TAP style, initials, or your own photo.</small>
+        </div>
+      </div>
+      <div className="avatar-styles">
+        {avatarStyles.map((id) => (
+          <button
+            type="button"
+            aria-label={`Use ${id} avatar`}
+            aria-pressed={
+              profile.avatarMode === "default" && profile.defaultAvatarId === id
+            }
+            onClick={() =>
+              onChange({
+                ...profile,
+                avatarMode: "default",
+                defaultAvatarId: id,
+              })
+            }
+            key={id}
+          >
+            <span className={`avatar avatar-${id}`}>
+              <span className="avatar-orbit">
+                <i />
+              </span>
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="avatar-actions">
+        <Button
+          type="button"
+          tone={profile.avatarMode === "initials" ? "primary" : "secondary"}
+          onClick={() => onChange({ ...profile, avatarMode: "initials" })}
+        >
+          USE INITIALS
+        </Button>
+        <label className="btn btn-secondary">
+          UPLOAD PHOTO
+          <input
+            className="sr-only"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => onUpload(e.target.files?.[0])}
+          />
+        </label>
+      </div>
+    </fieldset>
+  );
+}
+
+function AuthPage({ register = false }: { register?: boolean }) {
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [password, setPassword] = useState("");
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const nav = useNavigate();
+  const strength = [
+    password.length >= 8,
+    /[A-Za-z]/.test(password),
+    /[0-9]/.test(password),
+  ].filter(Boolean).length;
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    const f = new FormData(e.currentTarget);
+    const email = String(f.get("email")).trim();
+    const confirm = String(f.get("confirm") || password);
+    if (register) {
+      const check = passwordSchema.safeParse(password);
+      if (!check.success) {
+        setError(check.error.issues[0].message);
+        return;
+      }
+      if (password !== confirm) {
+        setError("Passwords do not match");
+        return;
+      }
+    }
+    setLoading(true);
+    if (register) {
+      const result = await signUp(email, password);
+      setLoading(false);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      if (result.needsVerification) {
+        setVerificationEmail(email);
+        return;
+      }
+      nav("/onboarding", { replace: true });
+    } else {
+      const result = await signIn(email, password);
+      setLoading(false);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      nav("/app", { replace: true });
+    }
+  };
+  if (verificationEmail)
+    return (
+      <main className="auth-page">
+        <Link className="back" to="/login">
+          ← Back to sign in
+        </Link>
+        <section className="auth-card">
+          <Logo />
+          <div>
+            <p className="eyebrow">VERIFY YOUR ACCOUNT</p>
+            <h1>Check your email</h1>
+            <p>
+              We sent a verification link to:
+              <br />
+              <strong>{verificationEmail}</strong>
+            </p>
+          </div>
+          {error && (
+            <div className="form-error" role="alert">
+              {error}
+            </div>
+          )}
+          <Button
+            tone="secondary"
+            onClick={async () =>
+              setError(
+                (await resendVerification(verificationEmail)) ||
+                  "Verification email sent again.",
+              )
+            }
+          >
+            RESEND EMAIL
+          </Button>
+          <Link className="btn btn-primary" to="/login">
+            BACK TO LOGIN
+          </Link>
+        </section>
+      </main>
+    );
+  return (
+    <main className="auth-page">
+      <Link className="back" to="/">
+        ← Back to TAP
+      </Link>
+      <section className="auth-card">
+        <Logo />
+        <div>
+          <p className="eyebrow">
+            {register ? "NEW IDENTITY" : "WELCOME BACK"}
+          </p>
+          <h1>{register ? "Create your TAP" : "Sign in to TAP"}</h1>
+          <p>
+            {register
+              ? "Start with an email. Make it yours in minutes."
+              : "Your profile is waiting."}
+          </p>
+        </div>
+        {!isSupabaseConfigured && (
+          <div className="demo-note">
+            Supabase is not configured. Example mode is available from the home
+            page; real account actions are disabled.
+          </div>
+        )}
+        <form onSubmit={submit}>
+          <label>
+            Email
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="you@example.com"
+            />
+          </label>
+          <label>
+            Password
+            <div className="password">
+              <input
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type={show ? "text" : "password"}
+                autoComplete={register ? "new-password" : "current-password"}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShow(!show)}
+                aria-label={show ? "Hide password" : "Show password"}
+              >
+                {show ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
+            {register && (
+              <span className="password-meter" data-strength={strength}>
+                <i />
+                <i />
+                <i />
+                <small>
+                  {strength === 3
+                    ? "Strong"
+                    : strength === 2
+                      ? "Almost there"
+                      : "8+ characters, one letter and one number"}
+                </small>
+              </span>
+            )}
+          </label>
+          {register && (
+            <label>
+              Confirm password
+              <input
+                name="confirm"
+                type={show ? "text" : "password"}
+                required
+              />
+            </label>
+          )}
+          {!register && (
+            <Link className="forgot-link" to="/forgot-password">
+              Forgot password?
+            </Link>
+          )}
+          {error && (
+            <div className="form-error" role="alert">
+              {error}
+            </div>
+          )}
+          <Button disabled={loading || !isSupabaseConfigured}>
+            {loading ? "PLEASE WAIT…" : register ? "CREATE ACCOUNT" : "SIGN IN"}
+          </Button>
+        </form>
+        <p className="auth-switch">
+          {register ? "Already have a TAP?" : "New here?"}{" "}
+          <Link to={register ? "/login" : "/register"}>
+            {register ? "Sign in" : "Create one"}
+          </Link>
+        </p>
+      </section>
+    </main>
+  );
+}
+
+function PasswordRecovery({ reset = false }: { reset?: boolean }) {
+  const { ready, authenticated } = useTap();
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const invalidReset = reset && isSupabaseConfigured && ready && !authenticated;
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    setError("");
+    const f = new FormData(e.currentTarget);
+    if (reset) {
+      const password = String(f.get("password"));
+      const check = passwordSchema.safeParse(password);
+      if (!check.success) {
+        setError(check.error.issues[0].message);
+        setLoading(false);
+        return;
+      }
+      if (supabase) {
+        const { error: err } = await supabase.auth.updateUser({ password });
+        if (err) {
+          setError("This reset link is invalid or expired. Request a new one.");
+          setLoading(false);
+          return;
+        }
+      }
+    } else {
+      const email = String(f.get("email"));
+      if (supabase) {
+        const { error: err } = await supabase.auth.resetPasswordForEmail(
+          email,
+          { redirectTo: `${location.origin}/reset-password` },
+        );
+        if (err) {
+          setError("We couldn’t send the reset email. Try again.");
+          setLoading(false);
+          return;
+        }
+      }
+    }
+    setSent(true);
+    setLoading(false);
+  };
+  return (
+    <main className="auth-page">
+      <Link className="back" to="/login">
+        ← Back to sign in
+      </Link>
+      <section className="auth-card">
+        <Logo />
+        <div>
+          <p className="eyebrow">ACCOUNT RECOVERY</p>
+          <h1>{reset ? "Choose a new password" : "Reset your password"}</h1>
+          <p>
+            {invalidReset
+              ? "This reset link is invalid or expired. Request a new one."
+              : sent
+                ? reset
+                  ? "Your password is ready."
+                  : "Check your inbox for a secure reset link."
+                : reset
+                  ? "Use at least eight characters with a letter and number."
+                  : "Enter the email connected to your TAP."}
+          </p>
+        </div>
+        {invalidReset ? (
+          <Link className="btn btn-primary" to="/forgot-password">
+            REQUEST A NEW LINK
+          </Link>
+        ) : sent ? (
+          <Link className="btn btn-primary" to={reset ? "/app" : "/login"}>
+            {reset ? "CONTINUE TO TAP" : "RETURN TO SIGN IN"}
+          </Link>
+        ) : (
+          <form onSubmit={submit}>
+            {reset ? (
+              <label>
+                New password
+                <input
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
+            ) : (
+              <label>
+                Email
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                />
+              </label>
+            )}
+            {error && (
+              <div className="form-error" role="alert">
+                {error}
+              </div>
+            )}
+            <Button disabled={loading}>
+              {loading
+                ? "WORKING…"
+                : reset
+                  ? "UPDATE PASSWORD"
+                  : "SEND RESET LINK"}
+            </Button>
+          </form>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function Onboarding() {
+  const { profile, setProfile, authenticated, ready, realMode } = useTap();
+  const nav = useNavigate();
+  const [step, setStep] = useState(profile.username ? 2 : 1);
+  const [draft, setDraft] = useState(profile);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [availability, setAvailability] = useState<
+    "idle" | "checking" | "available" | "unavailable" | "invalid"
+  >("idle");
+  useEffect(() => {
+    if (step !== 1) return;
+    const timer = setTimeout(() => {
+      const parsed = usernameSchema.safeParse(draft.username);
+      if (!parsed.success) {
+        setAvailability(draft.username ? "invalid" : "idle");
+        return;
+      }
+      setAvailability("checking");
+      checkUsername(parsed.data)
+        .then((ok) => setAvailability(ok ? "available" : "unavailable"))
+        .catch(() => setAvailability("idle"));
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [draft.username, step]);
+  if (realMode && !ready) return <RouteLoading />;
+  if (realMode && !authenticated) return <Navigate to="/login" replace />;
+  const chooseAvatar = async (file?: File) => {
+    if (!file) return;
+    setError("");
+    setSaving(true);
+    try {
+      const avatarUrl = await uploadAvatar(file);
+      setDraft((current) => ({ ...current, avatarUrl, avatarMode: "custom" }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not upload that image.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const next = async () => {
+    setError("");
+    if (step === 1) {
+      const r = usernameSchema.safeParse(draft.username);
+      if (!r.success) {
+        setError(r.error.issues[0].message);
+        return;
+      }
+      if (availability !== "available") {
+        setError(
+          availability === "checking"
+            ? "Still checking that username."
+            : "That username is unavailable.",
+        );
+        return;
+      }
+    }
+    if (step === 2 && !draft.displayName.trim()) {
+      setError("Add a display name to continue.");
+      return;
+    }
+    const nextProfile = { ...draft, onboardingComplete: step === 4 };
+    setSaving(true);
+    const result = await saveCurrentProfile(nextProfile);
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setProfile(nextProfile);
+    if (step < 4) setStep(step + 1);
+    else nav("/app", { replace: true });
+  };
+  return (
+    <main className="onboarding">
+      <div className="progress-dots" aria-label={`Step ${step} of 4`}>
+        {[1, 2, 3, 4].map((n) => (
+          <i className={n <= step ? "active" : ""} key={n} />
+        ))}
+      </div>
+      <section className={`onboard-card onboard-step-${step}`}>
+        <span className="eyebrow">STEP {step} OF 4</span>
+        {step === 1 && (
+          <>
+            <h1>Claim your name.</h1>
+            <p>This becomes your stable public TAP link.</p>
+            <label className="big-input">
+              <span>tap.app/u/</span>
+              <input
+                value={draft.username}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    username: e.target.value.toLowerCase().replace(/\s/g, ""),
+                  })
+                }
+                autoFocus
+              />
+            </label>
+            <small className={availability}>
+              3–24 characters · letters, numbers, _ and .{" "}
+              {availability === "checking"
+                ? "· Checking…"
+                : availability === "available"
+                  ? "· Available"
+                  : availability === "unavailable"
+                    ? "· Unavailable"
+                    : ""}
+            </small>
+          </>
+        )}
+        {step === 2 && (
+          <>
+            <h1>Show some personality.</h1>
+            <AvatarPicker
+              profile={{ ...draft, displayName: draft.displayName || "?" }}
+              onChange={setDraft}
+              onUpload={(file) => void chooseAvatar(file)}
+            />
+            <label>
+              Display name
+              <input
+                value={draft.displayName}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    displayName: e.target.value.slice(0, 40),
+                  })
+                }
+                autoFocus
+              />
+            </label>
+            <label>
+              Short bio
+              <textarea
+                value={draft.bio}
+                onChange={(e) =>
+                  setDraft({ ...draft, bio: e.target.value.slice(0, 160) })
+                }
+              />
+            </label>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <h1>Pick your vibe.</h1>
+            <ThemePicker
+              value={draft.themeId}
+              onChange={(themeId) => setDraft({ ...draft, themeId })}
+            />
+            <AccentPicker
+              value={draft.accentColor}
+              onChange={(accentColor) => setDraft({ ...draft, accentColor })}
+            />
+          </>
+        )}
+        {step === 4 && (
+          <>
+            <h1>Connect your worlds.</h1>
+            <p>
+              Your TAP starts empty. Add only the services you actually use.
+            </p>
+            <div className="mini-providers">
+              {providers.slice(0, 6).map((p) => (
+                <span key={p.id}>
+                  <ProviderMark id={p.id} />
+                  {p.name}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+        {error && (
+          <div className="form-error" role="alert">
+            {error}
+          </div>
+        )}
+        <div className="onboard-actions">
+          {step > 1 && (
+            <Button tone="ghost" onClick={() => setStep(step - 1)}>
+              BACK
+            </Button>
+          )}
+          <Button
+            onClick={next}
+            disabled={saving || availability === "checking"}
+          >
+            {saving ? "SAVING…" : step === 4 ? "ENTER TAP" : "CONTINUE"}
+          </Button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+const navItems = [
+  ["/app", UserRound, "Profile"],
+  ["/search", Search, "Search"],
+  ["/connections", Link2, "Connections"],
+  ["/cards", LayoutGrid, "Cards"],
+  ["/badges", BadgeCheck, "Badges"],
+] as const;
+function AppShell({ children }: { children: ReactNode }) {
+  const { profile, realMode } = useTap();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="app-shell">
+      {!realMode && (
+        <div className="demo-banner">
+          <span>EXAMPLE MODE</span> Supabase is not configured.{" "}
+          <Link to="/register">Configure accounts</Link>
+        </div>
+      )}
+      <aside className={open ? "open" : ""}>
+        <div className="side-head">
+          <Logo />
+          <button onClick={() => setOpen(false)} aria-label="Close menu">
+            <X />
+          </button>
+        </div>
+        <nav>
+          {navItems.map(([to, I, label]) => (
+            <NavLink key={to} to={to} end>
+              <I size={20} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+        <div className="side-bottom">
+          <NavLink to="/settings">
+            <Settings size={20} />
+            Settings
+          </NavLink>
+          <Link to={`/u/${profile.username}`}>
+            <ArrowUpRight size={20} />
+            Public profile
+          </Link>
+        </div>
+      </aside>
+      {open && (
+        <button
+          className="nav-scrim"
+          onClick={() => setOpen(false)}
+          aria-label="Close menu"
+        />
+      )}
+      <header className="mobile-head">
+        <Logo />
+        <button onClick={() => setOpen(true)} aria-label="Open menu">
+          <Menu />
+        </button>
+      </header>
+      <div className="app-content">{children}</div>
+      <nav className="bottom-nav">
+        {navItems.map(([to, I, label]) => (
+          <NavLink key={to} to={to} end>
+            <I />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function VerifiedStatsPanel(){
+  const {profile,connections,realMode}=useTap();const [stats,setStats]=useState<VerifiedStat[]>([]);const [summary,setSummary]=useState<VerifiedXpSummary>(()=>verifiedXpSummary(profile.xp,0));const [refreshing,setRefreshing]=useState('')
+  const reload=()=>loadVerifiedStats(profile.xp).then(data=>{setStats(data.stats);setSummary(data.summary)})
+  useEffect(()=>{let active=true;if(!realMode)return;loadVerifiedStats(profile.xp).then(data=>{if(active){setStats(data.stats);setSummary(data.summary)}});return()=>{active=false}},[profile.xp,realMode])
+  const refresh=async(stat:VerifiedStat)=>{if(!stat.connectionId||refreshing)return;setRefreshing(stat.id);await refreshVerifiedStats(stat.connectionId,stat.providerId);await reload();setRefreshing('')}
+  const prepared=connections.filter(connection=>providerById(connection.provider)?.supportsVerifiedStats)
+  return <section className="panel verified-panel"><header><div><span className="verified-kicker"><BadgeCheck/> VERIFIED STATS</span><h2>Verified XP</h2><p>Only official API or OAuth-confirmed metrics can contribute.</p></div><div className="verified-xp"><strong>{summary.verifiedXp}</strong><span>{summary.verifiedPercent}% of {summary.totalXp} XP</span></div></header>{stats.length?<div className="verified-stat-list">{stats.map((stat,index)=><RevealItem key={stat.id} index={index}><article><ProviderMark id={stat.providerId}/><div><strong>{stat.metricValue.toLocaleString()}</strong><span>{stat.metricLabel}</span><small>{stat.lastRefreshedAt?`Updated ${new Date(stat.lastRefreshedAt).toLocaleDateString()}`:'Awaiting first refresh'} · {refreshStatusLabel(stat.refreshStatus)}</small></div><Button tone="secondary" disabled={refreshing===stat.id||!stat.connectionId||!canRefreshAt(stat.nextRefreshEligibleAt)} onClick={()=>void refresh(stat)}>{refreshing===stat.id?'REFRESHING…':canRefreshAt(stat.nextRefreshEligibleAt)?'REFRESH':'COOLDOWN'}</Button>{!canRefreshAt(stat.nextRefreshEligibleAt)&&<small className="cooldown-copy">{cooldownLabel(stat.nextRefreshEligibleAt)}</small>}</article></RevealItem>)}</div>:<div className="verified-empty"><BadgeCheck/><div><strong>{prepared.length?'Verified Stats architecture is ready.':'Connect a stats-ready provider.'}</strong><p>{prepared.length?`${prepared.map(item=>providerById(item.provider).name).join(', ')} ${prepared.length===1?'is':'are'} prepared for future official adapters.`:'GitHub, YouTube, Twitch, Steam, Roblox, Modrinth, CurseForge, npm and Spotify are priority candidates.'}</p><small>No user-entered number is treated as verified.</small></div></div>}</section>
+}
+function Dashboard() {
+  const { profile, connections } = useTap();
+  return (
+    <AppShell>
+      <header className="page-head">
+        <div>
+          <span className="eyebrow">YOUR TAP</span>
+          <h1>Hey, {profile.displayName}.</h1>
+          <p>Your identity is ready to share.</p>
+        </div>
+        <ShareButton />
+      </header>
+      <div className="dashboard-grid">
+        <ProfileCard />
+        <section className="dash-side">
+          <div className="stats">
+            {[
+              [profile.taps, "Taps"],
+              [connections.length, "Connections"],
+              [profile.featuredBadges.length, "Badges"],
+              [levelFromXp(profile.xp).level, "Level"],
+            ].map(([n, l]) => (
+              <article key={l}>
+                <strong>{n}</strong>
+                <span>{l}</span>
+              </article>
+            ))}
+          </div>
+          <div className="quick">
+            <h2>Quick actions</h2>
+            <div>
+              <Link to="/edit">
+                <Palette />
+                Edit profile
+              </Link>
+              <Link to="/connections">
+                <Link2 />
+                Connections
+              </Link>
+              <Link to="/cards">
+                <LayoutGrid />
+                TAP cards
+              </Link>
+              <Link to={`/u/${profile.username}`}>
+                <ArrowUpRight />
+                View public
+              </Link>
+            </div>
+          </div>
+          <VerifiedStatsPanel />
+          <div className="privacy-card">
+            <ShieldCheck />
+            <div>
+              <strong>Privacy first</strong>
+              <p>Only your chosen fields and visible links appear publicly.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </AppShell>
+  );
+}
+
+function ProfileSearch() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ProfileSearchResult[]>([]);
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
+    "idle",
+  );
+  useEffect(() => {
+    const term = query.trim();
+    if (term.length < 2) {
+      const timer = setTimeout(() => {
+        setResults([]);
+        setStatus("idle");
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      searchProfiles(term)
+        .then((data) => {
+          if (active) {
+            setResults(data);
+            setStatus("done");
+          }
+        })
+        .catch(() => active && setStatus("error"));
+    }, 400);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
+  const avatarProfile = (result: ProfileSearchResult): Profile => ({
+    ...emptyProfile,
+    username: result.username,
+    displayName: result.displayName,
+    avatarUrl: result.avatarUrl,
+    avatarMode: result.avatarMode,
+    defaultAvatarId: result.defaultAvatarId,
+    onboardingComplete: true,
+  });
+  return (
+    <AppShell>
+      <header className="page-head">
+        <div>
+          <span className="eyebrow">SEARCH PROFILES</span>
+          <h1>Find people on TAP.</h1>
+          <p>Search by username or display name.</p>
+        </div>
+      </header>
+      <label className="profile-search-box">
+        <Search />
+        <input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setStatus(e.target.value.trim().length >= 2 ? "loading" : "idle");
+          }}
+          placeholder="Search people..."
+          autoFocus
+        />
+      </label>
+      <section className="search-results" aria-live="polite">
+        {status === "idle" && (
+          <div className="empty-state">
+            <Search />
+            <h2>Find people on TAP.</h2>
+            <p>Enter at least two characters.</p>
+          </div>
+        )}
+        {status === "loading" &&
+          [1, 2, 3].map((id) => (
+            <div className="search-skeleton" key={id}>
+              <i />
+              <span />
+              <b />
+            </div>
+          ))}
+        {status === "error" && (
+          <div className="empty-state">
+            <h2>Search is unavailable.</h2>
+            <p>Try again in a moment.</p>
+          </div>
+        )}
+        {status === "done" && results.length === 0 && (
+          <div className="empty-state">
+            <Search />
+            <h2>No profiles found.</h2>
+          </div>
+        )}
+        {status === "done" &&
+          results.map((result) => {
+            const content = (
+              <>
+                <Avatar profile={avatarProfile(result)} />
+                <span>
+                  <strong>{result.displayName}</strong>
+                  <small>
+                    @{result.username}
+                    {!result.isPrivate && result.level ? (
+                      <> · Level {result.level}</>
+                    ) : null}
+                  </small>
+                </span>
+                {result.isPrivate ? <Lock /> : <ArrowUpRight />}
+              </>
+            );
+            const href = publicSearchHref(result);
+            return href ? (
+              <Link className="search-result" to={href} key={result.username}>
+                {content}
+              </Link>
+            ) : (
+              <div
+                className="search-result private"
+                aria-label={`${result.displayName}, private profile`}
+                key={result.username}
+              >
+                {content}
+              </div>
+            );
+          })}
+      </section>
+    </AppShell>
+  );
+}
+
+function ShareButton() {
+  const { profile } = useTap();
+  const [open, setOpen] = useState(false);
+  const [qr, setQr] = useState("");
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">(
+    "idle",
+  );
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const url = `${location.origin}/u/${profile.username}`;
+  useEffect(() => {
+    let active = true;
+    if (open) {
+      import("qrcode")
+        .then(({ default: QRCode }) =>
+          QRCode.toDataURL(url, {
+            width: 720,
+            margin: 3,
+            errorCorrectionLevel: "M",
+            color: { dark: "#07070b", light: "#ffffff" },
+          }),
+        )
+        .then((value) => {
+          if (active) setQr(value);
+        })
+        .catch(() => undefined);
+    }
+    const close = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", close);
+    return () => {
+      active = false;
+      document.removeEventListener("keydown", close);
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [open, url]);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyState("copied");
+    } catch {
+      setCopyState("error");
+    }
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopyState("idle"), 1800);
+  };
+  const share = async () => {
+    try {
+      await navigator.share?.({ title: `${profile.displayName} on TAP`, url });
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError"))
+        void copy();
+    }
+  };
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Share2 size={18} /> SHARE MY TAP
+      </Button>
+      {open && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={() => setOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="share-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="share-title"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              onClick={() => setOpen(false)}
+              aria-label="Close share dialog"
+            >
+              <X />
+            </button>
+            <Logo />
+            <Avatar profile={profile} />
+            <div>
+              <h2 id="share-title">{profile.displayName}</h2>
+              <p>@{profile.username}</p>
+            </div>
+            {qr ? (
+              <img className="qr" src={qr} alt={`QR code for ${url}`} />
+            ) : (
+              <div className="qr skeleton" />
+            )}
+            <strong>SCAN MY TAP</strong>
+            <div className="share-actions">
+              <Button onClick={copy}>
+                {copyState === "copied" ? (
+                  <Check size={17} />
+                ) : (
+                  <Copy size={17} />
+                )}{" "}
+                {copyState === "copied"
+                  ? "COPIED"
+                  : copyState === "error"
+                    ? "COPY FAILED"
+                    : "COPY LINK"}
+              </Button>
+              {typeof navigator.share === "function" && (
+                <Button tone="secondary" onClick={() => void share()}>
+                  <Share2 size={17} /> SHARE
+                </Button>
+              )}
+            </div>
+            {copyState === "error" && (
+              <input
+                className="share-url"
+                value={url}
+                readOnly
+                onFocus={(e) => e.currentTarget.select()}
+                aria-label="Profile URL"
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function EditProfile() {
+  const store = useTap();
+  const { profile, setProfile } = store;
+  const [draft, setDraft] = useState(profile);
+  const [saveState, setSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const save = async () => {
+    const user = usernameSchema.safeParse(draft.username);
+    if (
+      !user.success ||
+      !draft.displayName.trim() ||
+      !isHexColor(draft.accentColor)
+    ) {
+      setSaveState("error");
+      return;
+    }
+    setSaveState("saving");
+    const result = await saveCurrentProfile(draft);
+    if (result.error) {
+      setSaveState("error");
+      return;
+    }
+    setProfile(draft);
+    setSaveState("saved");
+    setTimeout(() => setSaveState("idle"), 1600);
+  };
+  return (
+    <AppShell>
+      <header className="page-head">
+        <div>
+          <span className="eyebrow">PROFILE EDITOR</span>
+          <h1>Make it unmistakably yours.</h1>
+          <p>Everything updates in the preview before you save.</p>
+        </div>
+        <Button onClick={save} disabled={saveState === "saving"}>
+          {saveState === "saved" ? (
+            <>
+              <Check /> SAVED
+            </>
+          ) : saveState === "saving" ? (
+            "SAVING…"
+          ) : (
+            <>
+              <Check /> SAVE CHANGES
+            </>
+          )}
+        </Button>
+      </header>
+      {saveState === "error" && (
+        <div className="form-error page-error" role="alert">
+          We couldn’t save your profile. Check your details and try again.
+        </div>
+      )}
+      <div className="editor-grid">
+        <section className="panel form-stack">
+          <div className="form-section">
+            <h2>Identity</h2>
+            <label>
+              Display name
+              <input
+                value={draft.displayName}
+                maxLength={40}
+                onChange={(e) =>
+                  setDraft({ ...draft, displayName: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Username
+              <input
+                value={draft.username}
+                maxLength={24}
+                onChange={(e) =>
+                  setDraft({ ...draft, username: e.target.value.toLowerCase() })
+                }
+              />
+            </label>
+            <label>
+              Bio
+              <textarea
+                value={draft.bio}
+                maxLength={160}
+                onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
+              />
+              <small>{draft.bio.length}/160</small>
+            </label>
+          </div>
+          <div className="form-section">
+            <ThemePicker
+              value={draft.themeId}
+              onChange={(themeId) => setDraft({ ...draft, themeId })}
+            />
+            <AccentPicker
+              value={draft.accentColor}
+              onChange={(accentColor) => setDraft({ ...draft, accentColor })}
+            />
+          </div>
+          <fieldset className="visibility-picker">
+            <legend>Profile visibility</legend>
+            <button
+              type="button"
+              className={draft.visibility === "public" ? "selected" : ""}
+              onClick={() => setDraft({ ...draft, visibility: "public" })}
+            >
+              <Eye />
+              Public<span>Anyone with your TAP can view it.</span>
+            </button>
+            <button
+              type="button"
+              className={draft.visibility === "private" ? "selected" : ""}
+              onClick={() => setDraft({ ...draft, visibility: "private" })}
+            >
+              <EyeOff />
+              Private<span>Only you can open your profile.</span>
+            </button>
+          </fieldset>
+        </section>
+        <div className="sticky-preview">
+          <span className="eyebrow">LIVE PREVIEW</span>
+          <TapContext.Provider value={{ ...store, profile: draft }}>
+            <ProfileCard />
+          </TapContext.Provider>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function Connections() {
+  const { connections, setConnections, cards, setCards } = useTap();
+  const [editing, setEditing] = useState<ProviderId | null>(null);
+  const [value, setValue] = useState("");
+  const [filter, setFilter] = useState<"all" | ProviderDefinition["category"]>(
+    "all",
+  );
+  const [search, setSearch] = useState("");
+  const [message, setMessage] = useState("");
+  const [paste, setPaste] = useState("");
+  const [iconUrl, setIconUrl] = useState("");
+  const detect = () => {
+    const id = detectProviderFromUrl(paste);
+    if (!id) {
+      setMessage("Paste a supported HTTPS profile link.");
+      return;
+    }
+    setFilter(providerById(id).category);
+    setEditing(id);
+    setValue(paste);
+    setMessage(`${providerById(id).name} detected. Confirm the profile below.`);
+  };
+  const add = (id: ProviderId) => {
+    setMessage("");
+    try {
+      const parsed = parseProviderInput(id, value);
+      const url = parsed.url;
+      const existing = connections.find((c) => c.provider === id);
+      const item: Connection = {
+        id: existing?.id || crypto.randomUUID(),
+        provider: id,
+        mode: "manual",
+        state: "manual",
+        handle: parsed.handle,
+        displayLabel: providerById(id).name,
+        profileUrl: url,
+        iconUrl: id === "custom" && iconUrl ? iconUrl : existing?.iconUrl,
+        visible: true,
+        position: existing?.position ?? connections.length,
+      };
+      setConnections(
+        existing
+          ? connections.map((c) => (c.id === existing.id ? item : c))
+          : [...connections, item],
+      );
+      if (!existing)
+        setCards(
+          cards.map((card) =>
+            card.slug === "main" && !card.connectionIds.includes(item.id)
+              ? { ...card, connectionIds: [...card.connectionIds, item.id] }
+              : card,
+          ),
+        );
+      setEditing(null);
+      setValue("");
+      setMessage(`${providerById(id).name} added to your TAP.`);
+    } catch {
+      setMessage("Enter a valid username or HTTPS profile URL.");
+    }
+  };
+  const oauth = async (id: ProviderId) => {
+    if (!["github", "discord", "spotify", "youtube"].includes(id)) return;
+    try {
+      await connectOAuth(
+        id === "youtube" ? "google" : (id as "github" | "discord" | "spotify"),
+      );
+    } catch {
+      setMessage(
+        `${providerById(id).name} automatic connection isn’t configured yet. Add it manually instead.`,
+      );
+    }
+  };
+  const remove = (id: string) => {
+    setConnections(connections.filter((c) => c.id !== id));
+    setCards(
+      cards.map((card) => ({
+        ...card,
+        connectionIds: card.connectionIds.filter(
+          (connectionId) => connectionId !== id,
+        ),
+      })),
+    );
+    setEditing(null);
+    setMessage("Connection removed.");
+  };
+  const categoryLabels = {
+    social: "Social",
+    gaming: "Gaming",
+    creator: "Creator",
+    developer: "Developer",
+    other: "Other",
+  };
+  const visible = filterProviders(search,filter);
+  const grouped = Object.entries(categoryLabels)
+    .map(([id, label]) => ({
+      id: id as ProviderDefinition["category"],
+      label,
+      items: visible.filter((p) => p.category === id),
+    }))
+    .filter((g) => g.items.length);
+  return (
+    <AppShell>
+      <header className="page-head">
+        <div>
+          <span className="eyebrow">CONNECTIONS</span>
+          <h1>Bring your worlds together.</h1>
+          <p>
+            Official connections where available. Polished manual links
+            everywhere else.
+          </p>
+        </div>
+      </header>
+      <div className="smart-paste">
+        <Link2 />
+        <input
+          value={paste}
+          onChange={(e) => setPaste(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") detect();
+          }}
+          placeholder="Paste profile link..."
+          aria-label="Paste profile link"
+        />
+        <Button onClick={detect}>DETECT</Button>
+      </div>
+      <div className="connection-toolbar">
+        <div
+          className="connection-filters"
+          role="tablist"
+          aria-label="Connection categories"
+        >
+          {["all", "social", "gaming", "creator", "developer", "other"].map(
+            (id) => (
+              <button
+                role="tab"
+                aria-selected={filter === id}
+                className={filter === id ? "active" : ""}
+                onClick={() => setFilter(id as typeof filter)}
+                key={id}
+              >
+                {id === "all"
+                  ? "All"
+                  : categoryLabels[id as keyof typeof categoryLabels]}
+              </button>
+            ),
+          )}
+        </div>
+        <label className="provider-search">
+          <Search />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search apps…"
+            aria-label="Search apps"
+          />
+        </label>
+      </div>
+      {message && (
+        <div className="connection-message" role="status">
+          {message}
+        </div>
+      )}
+      <div className="provider-sections">
+        {grouped.map((group) => (
+          <section key={group.id}>
+            <div className="category-head">
+              <span>{group.label}</span>
+              <small>
+                {group.items.length} {group.items.length === 1 ? "app" : "apps"}
+              </small>
+            </div>
+            <div className="provider-grid">
+              {group.items.map((p) => {
+                const c = connections.find((x) => x.provider === p.id);
+                const status =
+                  c?.state === "connected"
+                    ? "Connected"
+                    : c?.state === "manual"
+                      ? "Added manually"
+                      : p.supportsOAuth
+                        ? "Not connected"
+                        : "Manual connection";
+                return (
+                  <article
+                    className={`provider-card ${c ? "provider-linked" : ""}`}
+                    key={p.id}
+                  >
+                    <div className="provider-main">
+                      <ProviderMark id={p.id} />
+                      <div>
+                        <small className="provider-category">
+                          {group.label}
+                        </small>
+                        <h3>{p.name}</h3>
+                        <span
+                          className={`status ${c?.state || "not_connected"}`}
+                        >
+                          <i />
+                          {status}
+                        </span>
+                        {c?.handle && (
+                          <b className="provider-handle">@{c.handle}</b>
+                        )}
+                      </div>
+                    </div>
+                    <div className="provider-actions">
+                      {!c && p.supportsOAuth ? (
+                        <Button onClick={() => oauth(p.id)}>CONNECT</Button>
+                      ) : (
+                        <Button
+                          tone={c ? "secondary" : "primary"}
+                          onClick={() => {
+                            setEditing(editing === p.id ? null : p.id);
+                            setValue(c?.handle || "");
+                          }}
+                        >
+                          {c ? "EDIT" : "ADD MANUALLY"}
+                        </Button>
+                      )}
+                      {c && hasValidDestination(c.profileUrl) && (
+                        <a
+                          className="open-profile"
+                          href={c.profileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          OPEN <ArrowUpRight />
+                        </a>
+                      )}
+                    </div>
+                    {editing === p.id && (
+                      <div className="manual-panel">
+                        <div>
+                          <strong>
+                            {c ? "Edit" : "Add"} {p.name}
+                          </strong>
+                          <a
+                            href={p.officialUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            OPEN {p.name.toUpperCase()} <ArrowUpRight />
+                          </a>
+                        </div>
+                        <label>
+                          Username or profile URL
+                          <input
+                            value={value}
+                            onChange={(e) => setValue(e.target.value)}
+                            placeholder="@username or https://…"
+                            autoFocus
+                          />
+                        </label>
+                        <>
+                          {p.id === "custom" && (
+                            <label className="custom-icon-upload">
+                              Custom icon (optional)
+                              <span>
+                                <ProviderMark
+                                  id="custom"
+                                  iconUrl={iconUrl || c?.iconUrl}
+                                />
+                                <label className="btn btn-secondary">
+                                  CHOOSE IMAGE
+                                  <input
+                                    className="sr-only"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      try {
+                                        setIconUrl(
+                                          await uploadConnectionIcon(file),
+                                        );
+                                      } catch (error) {
+                                        setMessage(
+                                          error instanceof Error
+                                            ? error.message
+                                            : "Could not upload that icon.",
+                                        );
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </span>
+                            </label>
+                          )}
+                          <small>
+                            {p.id === "discord" || p.id === "minecraft"
+                              ? "A username can be shown on TAP, but no public profile link will be invented."
+                              : "Manual links are never shown as verified."}
+                          </small>
+                        </>
+                        <div>
+                          <Button onClick={() => add(p.id)}>SAVE</Button>
+                          {c && (
+                            <Button tone="ghost" onClick={() => remove(c.id)}>
+                              REMOVE
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+        {visible.length === 0 && (
+          <div className="empty-state">
+            <Search />
+            <h2>No apps found.</h2>
+            <p>Try another name or category.</p>
+          </div>
+        )}
+      </div>
+    </AppShell>
+  );
+}
+
+function Cards() {
+  const { profile, cards, setCards, connections } = useTap();
+  const move = (card: TapCard, id: string, dir: -1 | 1) => {
+    const list = [...card.connectionIds];
+    const from = list.indexOf(id);
+    const to = from + dir;
+    if (from < 0 || to < 0 || to >= list.length) return;
+    [list[from], list[to]] = [list[to], list[from]];
+    setCards(
+      cards.map((c) => (c.id === card.id ? { ...c, connectionIds: list } : c)),
+    );
+  };
+  return (
+    <AppShell>
+      <header className="page-head">
+        <div>
+          <span className="eyebrow">TAP CARDS</span>
+          <h1>Different sides. One identity.</h1>
+          <p>Choose and order the connections shown on each card.</p>
+        </div>
+        {cards.length < 4 && (
+          <Button
+            onClick={() =>
+              setCards([
+                ...cards,
+                {
+                  id: crypto.randomUUID(),
+                  slug: `card-${cards.length + 1}`,
+                  name: "NEW CARD",
+                  type: "social",
+                  visible: true,
+                  connectionIds: [],
+                },
+              ])
+            }
+          >
+            ＋ ADD CARD
+          </Button>
+        )}
+      </header>
+      {connections.length === 0 ? (
+        <div className="empty-state large">
+          <LayoutGrid />
+          <h2>Your Main card is ready.</h2>
+          <p>Add your first connection, then choose where it appears.</p>
+          <Link className="btn btn-primary" to="/connections">
+            ADD A CONNECTION
+          </Link>
+        </div>
+      ) : (
+        <div className="cards-grid">
+          {cards.map((card) => (
+            <article className="panel card-editor" key={card.id}>
+              <div className="card-editor-head">
+                <input
+                  value={card.name}
+                  onChange={(e) =>
+                    setCards(
+                      cards.map((c) =>
+                        c.id === card.id
+                          ? { ...c, name: e.target.value.toUpperCase() }
+                          : c,
+                      ),
+                    )
+                  }
+                />
+                <span>/{card.slug}</span>
+                {card.slug !== "main" && (
+                  <button
+                    className="card-delete"
+                    type="button"
+                    aria-label={`Delete ${card.name}`}
+                    onClick={() => setCards(cards.filter((item) => item.id !== card.id))}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              {connections.map((c) => {
+                const selected = card.connectionIds.includes(c.id);
+                return (
+                  <div className="check-row" key={c.id}>
+                    <label>
+                      <span>
+                        <ProviderMark id={c.provider} />
+                        {c.displayLabel}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() =>
+                          setCards(
+                            cards.map((x) =>
+                              x.id === card.id
+                                ? {
+                                    ...x,
+                                    connectionIds: selected
+                                      ? x.connectionIds.filter(
+                                          (i) => i !== c.id,
+                                        )
+                                      : [...x.connectionIds, c.id],
+                                  }
+                                : x,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    {selected && (
+                      <span className="order-actions">
+                        <button
+                          aria-label={`Move ${c.displayLabel} up`}
+                          onClick={() => move(card, c.id, -1)}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          aria-label={`Move ${c.displayLabel} down`}
+                          onClick={() => move(card, c.id, 1)}
+                        >
+                          ↓
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              <Link to={`/u/${profile.username}?card=${card.slug}`}>
+                Preview link <ArrowUpRight size={15} />
+              </Link>
+            </article>
+          ))}
+        </div>
+      )}
+    </AppShell>
+  );
+}
+
+function Badges() {
+  const { profile, setProfile, realMode } = useTap();
+  const [message, setMessage] = useState("");
+  const toggle = async (id: string, featured: boolean) => {
+    const featuredBadges = featured
+      ? profile.featuredBadges.filter((x) => x !== id)
+      : profile.featuredBadges.length < 3
+        ? [...profile.featuredBadges, id]
+        : profile.featuredBadges;
+    const error = await saveFeaturedBadges(featuredBadges);
+    if (error) {
+      setMessage(error);
+      return;
+    }
+    setProfile({ ...profile, featuredBadges });
+  };
+  return (
+    <AppShell>
+      <header className="page-head">
+        <div>
+          <span className="eyebrow">BADGES</span>
+          <h1>Your identity has receipts.</h1>
+          <p>Feature up to three. XP stays server-controlled in production.</p>
+        </div>
+      </header>
+      {message && <div className="form-error page-error">{message}</div>}
+      <div className="badge-grid">
+        {badges.map(([id, name, desc, rarity], i) => {
+          const unlocked = realMode
+            ? profile.featuredBadges.includes(id)
+            : i < 6 || profile.featuredBadges.includes(id);
+          const featured = profile.featuredBadges.includes(id);
+          return (
+            <button
+              disabled={!unlocked}
+              onClick={() => void toggle(id, featured)}
+              className={`badge-card ${featured ? "featured" : ""}`}
+              key={id}
+            >
+              <span className="badge-icon">✦</span>
+              <small>{rarity}</small>
+              <h3>{name}</h3>
+              <p>{desc}</p>
+              <b>{!unlocked ? "LOCKED" : featured ? "FEATURED" : "SELECT"}</b>
+            </button>
+          );
+        })}
+      </div>
+    </AppShell>
+  );
+}
+
+function SettingsPage() {
+  const { profile, setProfile, realMode } = useTap();
+  const nav = useNavigate();
+  const [message, setMessage] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const logout = async () => {
+    await supabase?.auth.signOut();
+    nav("/login", { replace: true });
+  };
+  const privacy = async (visibility: Profile["visibility"]) => {
+    const next = { ...profile, visibility };
+    setProfile(next);
+    const result = await saveCurrentProfile(next);
+    if (result.error) {
+      setProfile(profile);
+      setMessage(result.error);
+    } else setMessage("Privacy saved.");
+  };
+  const removeAccount = async () => {
+    if (
+      !confirm(
+        "Permanently delete your TAP account and all of its data? This cannot be undone.",
+      )
+    )
+      return;
+    setDeleting(true);
+    const error = await deleteAccount();
+    setDeleting(false);
+    if (error) {
+      setMessage(error);
+      return;
+    }
+    await supabase?.auth.signOut();
+    nav("/", { replace: true });
+  };
+  return (
+    <AppShell>
+      <header className="page-head">
+        <div>
+          <span className="eyebrow">SETTINGS</span>
+          <h1>Control your TAP.</h1>
+        </div>
+      </header>
+      {message && (
+        <div className="connection-message" role="status">
+          {message}
+        </div>
+      )}
+      <div className="settings-stack">
+        <section className="panel">
+          <h2>Privacy</h2>
+          <label className="setting-row">
+            <span>
+              <b>Public profile</b>
+              <small>Anyone with your link can view it.</small>
+            </span>
+            <input
+              type="checkbox"
+              checked={profile.visibility === "public"}
+              onChange={(e) =>
+                void privacy(e.target.checked ? "public" : "private")
+              }
+            />
+          </label>
+          <label className="setting-row">
+            <span>
+              <b>Appear in profile search</b>
+              <small>
+                Private profiles show only your name, username and avatar.
+              </small>
+            </span>
+            <input
+              type="checkbox"
+              checked={profile.discoverable}
+              onChange={async (e) => {
+                const next = { ...profile, discoverable: e.target.checked };
+                setProfile(next);
+                const result = await saveCurrentProfile(next);
+                setMessage(result.error || "Discovery saved.");
+              }}
+            />
+          </label>
+        </section>
+        <section className="panel">
+          <h2>Appearance</h2>
+          <label className="setting-row">
+            <span>
+              <b>Reduced motion</b>
+              <small>Also follows your operating system setting.</small>
+            </span>
+            <input
+              type="checkbox"
+              onChange={(e) =>
+                document.documentElement.classList.toggle(
+                  "reduce-motion",
+                  e.target.checked,
+                )
+              }
+            />
+          </label>
+        </section>
+        <section className="panel">
+          <h2>Account</h2>
+          <Link className="btn btn-secondary" to="/forgot-password">
+            CHANGE PASSWORD
+          </Link>
+          <Button tone="secondary" onClick={logout}>
+            <LogOut /> LOG OUT
+          </Button>
+        </section>
+        <section className="panel danger">
+          <h2>Danger zone</h2>
+          <p>
+            Permanently delete your profile, connections, cards, badges and
+            avatar.
+          </p>
+          <Button
+            tone="secondary"
+            disabled={!realMode || deleting}
+            onClick={() => void removeAccount()}
+          >
+            {deleting ? "DELETING…" : "DELETE ACCOUNT"}
+          </Button>
+        </section>
+      </div>
+    </AppShell>
+  );
+}
+
+function PublicProfile() {
+  const store = useTap();
+  const { username = "" } = useParams();
+  const locationState = useLocation();
+  const cardSlug =
+    new URLSearchParams(locationState.search).get("card") || "main";
+  const [state, setState] = useState<
+    "loading" | "public" | "private" | "not_found" | "error"
+  >(isSupabaseConfigured ? "loading" : "public");
+  const [publicData, setPublicData] = useState<{
+    profile: Profile;
+    connections: Connection[];
+    card: TapCard;
+  } | null>(null);
+  useEffect(() => {
+    let active = true;
+    if (!isSupabaseConfigured || isDemoUsername(username)) return;
+    Promise.resolve().then(() => active && setState("loading"));
+    getPublicProfile(username, cardSlug)
+      .then((result) => {
+        if (!active) return;
+        setState(result.status);
+        if (
+          result.status === "public" &&
+          result.profile &&
+          result.connections &&
+          result.card
+        )
+          setPublicData({
+            profile: result.profile,
+            connections: result.connections,
+            card: result.card,
+          });
+      })
+      .catch(() => active && setState("error"));
+    return () => {
+      active = false;
+    };
+  }, [username, cardSlug]);
+  useEffect(() => {
+    if (publicData)
+      document.title = `${publicData.profile.displayName} (@${publicData.profile.username}) — TAP`;
+    return () => {
+      document.title = "TAP — Create your identity";
+    };
+  }, [publicData]);
+  const effectiveState = isDemoUsername(username)
+    ? "not_found"
+    : isSupabaseConfigured
+      ? state
+      : username === store.profile.username
+        ? store.profile.visibility
+        : "not_found";
+  if (effectiveState === "loading")
+    return <RouteLoading label="Loading this TAP…" />;
+  if (effectiveState === "private")
+    return (
+      <main className="public-page">
+        <Logo />
+        <div className="private-state">
+          <ShieldCheck />
+          <h1>This TAP profile is private.</h1>
+        </div>
+      </main>
+    );
+  if (effectiveState === "not_found")
+    return (
+      <main className="public-page">
+        <Logo />
+        <div className="private-state">
+          <UserRound />
+          <h1>Profile not found.</h1>
+          <p>Check the username and try again.</p>
+        </div>
+      </main>
+    );
+  if (effectiveState === "error")
+    return (
+      <main className="public-page">
+        <Logo />
+        <div className="private-state">
+          <UserRound />
+          <h1>Could not load this TAP.</h1>
+          <Button onClick={() => location.reload()}>TRY AGAIN</Button>
+        </div>
+      </main>
+    );
+  const data = publicData || {
+    profile: store.profile,
+    connections: store.connections,
+    card: store.cards.find((c) => c.slug === cardSlug) || store.cards[0],
+  };
+  if (!data.card) return null;
+  return (
+    <TapContext.Provider
+      value={{
+        ...store,
+        profile: data.profile,
+        connections: data.connections,
+        cards: [data.card],
+      }}
+    >
+      <main className="public-page">
+        <div className="public-top">
+          <Logo />
+          <ShareButton />
+        </div>
+        <div className="public-wrap">
+          <ProfileCard card={data.card} />
+          <div className="public-meta">
+            <div>
+              <strong>{data.profile.taps.toLocaleString()}</strong>
+              <span>TAPS</span>
+            </div>
+            <div>
+              <strong>{data.card.name}</strong>
+              <span>ACTIVE CARD</span>
+            </div>
+          </div>
+          <p className="tap-signoff">Made with TAP · create your identity</p>
+        </div>
+      </main>
+    </TapContext.Provider>
+  );
+}
+
+function RouteLoading({ label = "Loading your TAP…" }: { label?: string }) {
+  return (
+    <main className="route-loading">
+      <div className="loading-orb" />
+      <span>{label}</span>
+    </main>
+  );
+}
+function AuthCallback() {
+  const { ready, authenticated, profile, loadError, reload } = useTap();
+  if (!ready) return <RouteLoading label="Confirming your account…" />;
+  if (loadError)
+    return (
+      <main className="public-page">
+        <Logo />
+        <div className="private-state">
+          <h1>Could not finish signing in.</h1>
+          <p>{loadError}</p>
+          <Button onClick={() => void reload()}>TRY AGAIN</Button>
+        </div>
+      </main>
+    );
+  if (!authenticated) return <Navigate to="/login" replace />;
+  return (
+    <Navigate
+      to={isProfileComplete(profile) ? "/app" : "/onboarding"}
+      replace
+    />
+  );
+}
+function Protected({ children }: { children: ReactNode }) {
+  const { profile, ready, authenticated, loadError, reload, realMode } =
+    useTap();
+  if (!ready) return <RouteLoading />;
+  if (loadError && authenticated)
+    return (
+      <main className="public-page">
+        <Logo />
+        <div className="private-state">
+          <h1>Could not load your profile.</h1>
+          <p>{loadError}</p>
+          <Button onClick={() => void reload()}>TRY AGAIN</Button>
+        </div>
+      </main>
+    );
+  if (realMode && !authenticated) return <Navigate to="/login" replace />;
+  if (realMode && authenticated && !isProfileComplete(profile))
+    return <Navigate to="/onboarding" replace />;
+  return children;
+}
+export default function App() {
+  return (
+    <StoreContext>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/register" element={<AuthPage register />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/forgot-password" element={<PasswordRecovery />} />
+        <Route path="/reset-password" element={<PasswordRecovery reset />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route
+          path="/app"
+          element={
+            <Protected>
+              <Dashboard />
+            </Protected>
+          }
+        />
+        <Route
+          path="/edit"
+          element={
+            <Protected>
+              <EditProfile />
+            </Protected>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <Protected>
+              <ProfileSearch />
+            </Protected>
+          }
+        />
+        <Route
+          path="/connections"
+          element={
+            <Protected>
+              <Connections />
+            </Protected>
+          }
+        />
+        <Route
+          path="/cards"
+          element={
+            <Protected>
+              <Cards />
+            </Protected>
+          }
+        />
+        <Route
+          path="/badges"
+          element={
+            <Protected>
+              <Badges />
+            </Protected>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <Protected>
+              <SettingsPage />
+            </Protected>
+          }
+        />
+        <Route path="/u/:username" element={<PublicProfile />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </StoreContext>
+  );
+}
