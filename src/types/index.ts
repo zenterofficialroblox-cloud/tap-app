@@ -22,7 +22,7 @@ export interface TapCard {
 export type AvatarMode = 'photo' | 'preset' | 'icon'
 export type PresetAvatarId = 'cosmic'|'robot'|'fox'|'crystal'|'pixel'
 export type AvatarIconId = 'orbit'|'bolt'|'gamepad'|'headphones'|'code'
-export interface Profile { username: string; displayName: string; bio: string; avatarUrl?: string; avatarMode: AvatarMode; defaultAvatarId: PresetAvatarId; avatarIconId: AvatarIconId; avatarIconColor:string; avatarBackgroundColor:string; avatarBackgroundColor2?:string; discoverable: boolean; accentColor: string; themeId: string; visibility: 'public' | 'private'; xp: number; taps: number; featuredBadges: string[]; onboardingComplete: boolean }
+export interface Profile { username: string; displayName: string; bio: string; avatarUrl?: string; avatarMode: AvatarMode; defaultAvatarId: PresetAvatarId; avatarIconId: AvatarIconId; avatarIconColor:string; avatarBackgroundColor:string; avatarBackgroundColor2?:string; discoverable: boolean; accentColor: string; themeId: string; visibility: 'public' | 'private'; xp: number; taps: number; featuredBadges: string[]; earnedBadges:string[]; onboardingComplete: boolean }
 export interface ProfileSearchResult { username:string; displayName:string; avatarUrl?:string; avatarMode:AvatarMode; defaultAvatarId:PresetAvatarId; avatarIconId?:AvatarIconId; avatarIconColor?:string; avatarBackgroundColor?:string; avatarBackgroundColor2?:string; level?:number; isPrivate:boolean }
 export type VerifiedMetricType='COUNT'|'BIG_COUNT'|'TIME'|'RATIO'|'SCORE'
 export type RefreshStatus='idle'|'pending'|'success'|'error'|'cooldown'|'unavailable'

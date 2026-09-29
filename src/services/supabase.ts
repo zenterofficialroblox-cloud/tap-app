@@ -169,6 +169,9 @@ const mapProfile = (data: Record<string, unknown>): Profile => ({
   featuredBadges: Array.isArray(data.featured_badges)
     ? data.featured_badges.map(String)
     : [],
+  earnedBadges: Array.isArray(data.earned_badges)
+    ? data.earned_badges.map(String)
+    : [],
   onboardingComplete: Boolean(data.onboarding_complete),
 });
 const mapConnection = (
@@ -225,6 +228,7 @@ export async function loadAppData(): Promise<AppData> {
     throw new Error(
       messageFor(cardInitError, "Could not initialize your Main card."),
     );
+  await supabase.rpc("refresh_user_badges");
   const [profileResult, connectionsResult, cardsResult, badgesResult] =
     await Promise.all([
       supabase
@@ -249,8 +253,7 @@ export async function loadAppData(): Promise<AppData> {
       supabase
         .from("user_badges")
         .select("featured_position,badges(code)")
-        .not("featured_position", "is", null)
-        .order("featured_position"),
+        .order("unlocked_at"),
     ]);
   const firstError =
     profileResult.error ||
@@ -264,10 +267,17 @@ export async function loadAppData(): Promise<AppData> {
       "Your profile could not be initialized. Run the latest Supabase migration.",
     );
   const profile = mapProfile(profileResult.data);
-  profile.featuredBadges = (badgesResult.data || []).flatMap((row) => {
+  profile.earnedBadges = (badgesResult.data || []).flatMap((row) => {
     const badge = row.badges as unknown as { code?: string } | null;
     return badge?.code ? [badge.code] : [];
   });
+  profile.featuredBadges = (badgesResult.data || [])
+    .filter((row) => row.featured_position != null)
+    .sort((a,b)=>Number(a.featured_position)-Number(b.featured_position))
+    .flatMap((row) => {
+      const badge = row.badges as unknown as { code?: string } | null;
+      return badge?.code ? [badge.code] : [];
+    });
   const connections = (connectionsResult.data || []).map((row) =>
     mapConnection(row),
   );

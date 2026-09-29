@@ -59,6 +59,8 @@ import tiktokIcon from "simple-icons/icons/tiktok.svg";
 import twitchIcon from "simple-icons/icons/twitch.svg";
 import xIcon from "simple-icons/icons/x.svg";
 import snapchatIcon from "simple-icons/icons/snapchat.svg";
+import codebergIcon from "simple-icons/icons/codeberg.svg";
+import giteaIcon from "simple-icons/icons/gitea.svg";
 import robloxIcon from "simple-icons/icons/roblox.svg";
 import steamIcon from "simple-icons/icons/steam.svg";
 import playstationIcon from "simple-icons/icons/playstation.svg";
@@ -354,6 +356,8 @@ const brandIcons: Partial<Record<ProviderId, string>> = {
   twitch: twitchIcon,
   x: xIcon,
   snapchat: snapchatIcon,
+  codeberg: codebergIcon,
+  gitea: giteaIcon,
   roblox: robloxIcon,
   steam: steamIcon,
   playstation: playstationIcon,
@@ -386,15 +390,18 @@ function ProviderMark({ id, iconUrl }: { id: ProviderId; iconUrl?: string }) {
   const p = providerById(id);
   const icon = brandIcons[id];
   const [failed, setFailed] = useState("");
-  const custom = iconUrl && failed !== iconUrl;
+  const packagedIcon=id==='minecraft'?'/provider-icons/minecraft.png':id==='linkedin'?'/provider-icons/linkedin.svg':id==='codepen'?'/provider-icons/codepen.svg':undefined
+  const imageSource=iconUrl||packagedIcon
+  const custom = imageSource && failed !== imageSource;
   const Fallback=p.category==='gaming'?Gamepad2:p.category==='developer'?Code2:p.category==='creator'?Play:p.category==='social'?UsersRound:Globe2
   return (
     <span
       className="provider-mark"
+      data-provider={id}
       style={{ "--provider": p.accent } as React.CSSProperties}
     >
       {custom ? (
-        <img src={iconUrl} onError={() => setFailed(iconUrl)} alt="" />
+        <img className="provider-image" src={imageSource} onError={() => setFailed(imageSource)} alt="" />
       ) : icon ? (
         <img className="brand-icon" src={icon} alt="" />
       ) : <Fallback aria-hidden="true" />}
@@ -461,7 +468,7 @@ function ProfileCard({
   const { profile, connections, cards } = useTap();
   const active = card || cards[0];
   const shown = connections
-    .filter((c) => c.visible && active?.connectionIds.includes(c.id))
+    .filter((c) => c.visible && active?.connectionIds.includes(c.id) && !active.hiddenConnectionIds.includes(c.id))
     .sort(
       (a, b) =>
         (active?.connectionIds.indexOf(a.id) ?? a.position) -
@@ -483,7 +490,7 @@ function ProfileCard({
         {profile.featuredBadges.length > 0 && (
           <div className="badge-row">
             {profile.featuredBadges.slice(0, 3).map((b) => (
-              <span key={b}>✦ {badges.find((x) => x[0] === b)?.[1]}</span>
+              <span key={b}>✦ {badges.find((x) => x.id === b)?.name}</span>
             ))}
           </div>
         )}
@@ -1717,6 +1724,15 @@ function EditProfile() {
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const chooseAvatar = async (file?:File) => {
+    if(!file)return;
+    setSaveState("saving");
+    try{
+      const avatarUrl=await uploadAvatar(file);
+      setDraft(current=>({...current,avatarUrl,avatarMode:"photo"}));
+      setSaveState("idle");
+    }catch{setSaveState("error")}
+  };
   const save = async () => {
     const user = usernameSchema.safeParse(draft.username);
     if (
@@ -1827,6 +1843,10 @@ function EditProfile() {
               Private<span>Only you can open your profile.</span>
             </button>
           </fieldset>
+        </section>
+        <section className="panel avatar-editor-panel">
+          <span className="eyebrow">AVATAR STUDIO</span>
+          <AvatarPicker profile={draft} onChange={setDraft} onUpload={(file)=>void chooseAvatar(file)} />
         </section>
         <div className="sticky-preview">
           <span className="eyebrow">LIVE PREVIEW</span>
@@ -2286,7 +2306,7 @@ function Cards() {
 }
 
 function Badges() {
-  const { profile, setProfile, realMode } = useTap();
+  const { profile, setProfile } = useTap();
   const [message, setMessage] = useState("");
   const toggle = async (id: string, featured: boolean) => {
     const featuredBadges = featured
@@ -2311,30 +2331,34 @@ function Badges() {
         </div>
       </header>
       {message && <div className="form-error page-error">{message}</div>}
+      <div className="badge-summary"><strong>{profile.earnedBadges.length}</strong><span>of {badges.length} unlocked</span><Link to="/help/badges">Badge guide <ArrowUpRight/></Link></div>
       <div className="badge-grid">
-        {badges.map(([id, name, desc, rarity], i) => {
-          const unlocked = realMode
-            ? profile.featuredBadges.includes(id)
-            : i < 6 || profile.featuredBadges.includes(id);
-          const featured = profile.featuredBadges.includes(id);
+        {[...badges].sort((a,b)=>{
+          const rank=(badge:typeof a)=>profile.featuredBadges.includes(badge.id)?0:profile.earnedBadges.includes(badge.id)?1:2;
+          return rank(a)-rank(b);
+        }).map((badge) => {
+          const unlocked = profile.earnedBadges.includes(badge.id);
+          const featured = profile.featuredBadges.includes(badge.id);
           return (
-            <button
-              disabled={!unlocked}
-              onClick={() => void toggle(id, featured)}
-              className={`badge-card ${featured ? "featured" : ""}`}
-              key={id}
-            >
-              <span className="badge-icon">✦</span>
-              <small>{rarity}</small>
-              <h3>{name}</h3>
-              <p>{desc}</p>
-              <b>{!unlocked ? "LOCKED" : featured ? "FEATURED" : "SELECT"}</b>
-            </button>
+            <article className={`badge-card ${featured ? "featured" : ""} ${unlocked?'unlocked':'locked'}`} key={badge.id}>
+              <span className="badge-icon"><Sparkles/></span>
+              <small>{badge.rarity}</small>
+              <h3>{badge.name}</h3>
+              <p>{badge.description}</p>
+              {unlocked?<button type="button" onClick={() => void toggle(badge.id, featured)}>{featured?'REMOVE FROM PROFILE':'FEATURE ON PROFILE'}</button>:<Link to={`/help/badges#${badge.id}`}>HOW TO GET <ArrowUpRight/></Link>}
+            </article>
           );
         })}
       </div>
     </AppShell>
   );
+}
+
+function HelpPage({topic}:{topic:'badges'|'levels'|'profile'}){
+  const location=useLocation();
+  useEffect(()=>{if(location.hash)setTimeout(()=>document.getElementById(location.hash.slice(1))?.scrollIntoView({behavior:'smooth',block:'center'}),50)},[location.hash]);
+  const levelRows=Array.from({length:20},(_,i)=>({level:i+1,xp:i*i*100,next:(i+1)*(i+1)*100}));
+  return <main className="help-page"><header><Logo/><nav><Link to="/help/badges">Badges</Link><Link to="/help/levels">Levels</Link><Link to="/help/profile">Profile</Link><Link to="/app">Open TAP</Link></nav></header><section className="help-hero"><span className="eyebrow">TAP HELP CENTER</span><h1>{topic==='badges'?'Badges and achievements':topic==='levels'?'Levels and XP':'Your TAP profile'}</h1><p>{topic==='badges'?'Learn exactly how every badge is earned and which badges can be featured.':topic==='levels'?'Understand XP, levels, progress, and verified milestones.':'Learn how visibility, cards, connections, avatars, and sharing work.'}</p></section>{topic==='badges'?<section className="help-list">{badges.map(badge=><article id={badge.id} key={badge.id}><span className="badge-icon"><Sparkles/></span><div><small>{badge.rarity}</small><h2>{badge.name}</h2><p>{badge.description}</p><strong>How to get it</strong><p>{badge.howTo}</p></div></article>)}</section>:topic==='levels'?<section className="help-list level-help"><article id="xp"><div><h2>How XP works</h2><p><strong>XP</strong> records meaningful progress in TAP. Verified provider milestones are calculated server-side, so manually typed statistics never count as verified XP.</p></div></article>{levelRows.map(row=><article id={`level-${row.level}`} key={row.level}><div><small>LEVEL {row.level}</small><h2>{row.xp.toLocaleString()} XP</h2><p>Reach this level at {row.xp.toLocaleString()} total XP. The next level begins at {row.next.toLocaleString()} XP.</p></div></article>)}</section>:<section className="help-list"><article id="visibility"><div><h2>Public and private profiles</h2><p>A public profile can be opened by its TAP URL. A private profile is visible only to its owner.</p></div></article><article id="cards"><div><h2>Cards and connection order</h2><p>Cards let you choose which connections appear. Hidden connections stay private and remember their saved priority.</p></div></article><article id="avatars"><div><h2>Avatar Studio</h2><p>Choose a photo, built-in TAP identity, or customizable icon. Your selection is saved to your account.</p></div></article><article id="verified"><div><h2>Verified stats</h2><p>Verified metrics come only from an explicitly authorized official provider API. They do not mean human identity verification.</p></div></article></section>}</main>
 }
 
 function SettingsPage() {
@@ -2710,6 +2734,9 @@ export default function App() {
           }
         />
         <Route path="/u/:username" element={<PublicProfile />} />
+        <Route path="/help/badges" element={<HelpPage topic="badges" />} />
+        <Route path="/help/levels" element={<HelpPage topic="levels" />} />
+        <Route path="/help/profile" element={<HelpPage topic="profile" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </StoreContext>
