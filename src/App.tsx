@@ -466,7 +466,16 @@ function ProfileCard({
   interactive?: boolean;
 }) {
   const { profile, connections, cards } = useTap();
+  const [bioExpanded, setBioExpanded] = useState(false);
+  const [badgesExpanded, setBadgesExpanded] = useState(false);
   const active = card || cards[0];
+  const bioNeedsToggle = profile.bio.length > 60;
+  const visibleBio = bioExpanded || !bioNeedsToggle
+    ? profile.bio
+    : `${profile.bio.slice(0, 60).trimEnd()}…`;
+  const visibleBadges = badgesExpanded
+    ? profile.featuredBadges
+    : profile.featuredBadges.slice(0, 3);
   const shown = connections
     .filter((c) => c.visible && active?.connectionIds.includes(c.id) && !active.hiddenConnectionIds.includes(c.id))
     .sort(
@@ -476,7 +485,7 @@ function ProfileCard({
     );
   return (
     <article
-      className={`profile-card theme-${profile.themeId} ${compact ? "profile-card-compact" : ""}`}
+      className={`profile-card theme-${profile.themeId} ${compact ? "profile-card-compact" : ""} ${bioExpanded || badgesExpanded ? "profile-card-expanded" : ""}`}
       style={{ "--accent": profile.accentColor } as React.CSSProperties}
     >
       <div className="card-shine" />
@@ -486,12 +495,26 @@ function ProfileCard({
         <p className="handle" title={`@${profile.username}`}>
           @{profile.username}
         </p>
-        {profile.bio && <p className="bio">{profile.bio}</p>}
+        {profile.bio && (
+          <div className="bio-block">
+            <p className="bio">{visibleBio}</p>
+            {bioNeedsToggle && (
+              <button type="button" className="profile-expand-toggle bio-toggle" aria-expanded={bioExpanded} onClick={() => setBioExpanded((value) => !value)}>
+                {bioExpanded ? "LESS" : "MORE"}
+              </button>
+            )}
+          </div>
+        )}
         {profile.featuredBadges.length > 0 && (
           <div className="badge-row">
-            {profile.featuredBadges.slice(0, 3).map((b) => (
+            {visibleBadges.map((b) => (
               <span key={b}>✦ {badges.find((x) => x.id === b)?.name}</span>
             ))}
+            {profile.featuredBadges.length > 3 && (
+              <button type="button" className="profile-expand-toggle badge-toggle" aria-label={badgesExpanded ? "Show fewer badges" : "Show all badges"} aria-expanded={badgesExpanded} onClick={() => setBadgesExpanded((value) => !value)}>
+                {badgesExpanded ? "−" : `+${profile.featuredBadges.length - 3}`}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1261,7 +1284,7 @@ function Onboarding() {
               <textarea
                 value={draft.bio}
                 onChange={(e) =>
-                  setDraft({ ...draft, bio: e.target.value.slice(0, 160) })
+                  setDraft({ ...draft, bio: e.target.value.slice(0, 1000) })
                 }
               />
             </label>
@@ -1808,10 +1831,10 @@ function EditProfile() {
               Bio
               <textarea
                 value={draft.bio}
-                maxLength={160}
+                maxLength={1000}
                 onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
               />
-              <small>{draft.bio.length}/160</small>
+              <small>{draft.bio.length}/1000</small>
             </label>
           </div>
           <div className="form-section">
@@ -1844,15 +1867,17 @@ function EditProfile() {
             </button>
           </fieldset>
         </section>
-        <section className="panel avatar-editor-panel">
-          <span className="eyebrow">AVATAR STUDIO</span>
-          <AvatarPicker profile={draft} onChange={setDraft} onUpload={(file)=>void chooseAvatar(file)} />
-        </section>
-        <div className="sticky-preview">
-          <span className="eyebrow">LIVE PREVIEW</span>
-          <TapContext.Provider value={{ ...store, profile: draft }}>
-            <ProfileCard />
-          </TapContext.Provider>
+        <div className="editor-preview-column">
+          <div className="sticky-preview">
+            <span className="eyebrow">LIVE PREVIEW</span>
+            <TapContext.Provider value={{ ...store, profile: draft }}>
+              <ProfileCard />
+            </TapContext.Provider>
+          </div>
+          <section className="panel avatar-editor-panel">
+            <span className="eyebrow">AVATAR STUDIO</span>
+            <AvatarPicker profile={draft} onChange={setDraft} onUpload={(file)=>void chooseAvatar(file)} />
+          </section>
         </div>
       </div>
     </AppShell>
@@ -2311,9 +2336,7 @@ function Badges() {
   const toggle = async (id: string, featured: boolean) => {
     const featuredBadges = featured
       ? profile.featuredBadges.filter((x) => x !== id)
-      : profile.featuredBadges.length < 3
-        ? [...profile.featuredBadges, id]
-        : profile.featuredBadges;
+      : [...profile.featuredBadges, id];
     const error = await saveFeaturedBadges(featuredBadges);
     if (error) {
       setMessage(error);
@@ -2327,7 +2350,7 @@ function Badges() {
         <div>
           <span className="eyebrow">BADGES</span>
           <h1>Your identity has receipts.</h1>
-          <p>Feature up to three. XP stays server-controlled in production.</p>
+          <p>Equip the badges that represent you. XP stays server-controlled in production.</p>
         </div>
       </header>
       {message && <div className="form-error page-error">{message}</div>}
