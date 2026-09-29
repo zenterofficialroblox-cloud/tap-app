@@ -162,6 +162,7 @@ export const demoCards: TapCard[] = [
       "steam",
       "website",
     ],
+    hiddenConnectionIds: [],
     visible: true,
   },
   {
@@ -170,6 +171,7 @@ export const demoCards: TapCard[] = [
     name: "GAMING",
     type: "gaming",
     connectionIds: ["discord"],
+    hiddenConnectionIds: [],
     visible: true,
   },
   {
@@ -178,6 +180,7 @@ export const demoCards: TapCard[] = [
     name: "DEV",
     type: "dev",
     connectionIds: ["github"],
+    hiddenConnectionIds: [],
     visible: true,
   },
 ];

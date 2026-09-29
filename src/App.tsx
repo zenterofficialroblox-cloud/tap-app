@@ -173,6 +173,7 @@ import {
   uploadAvatar,
   uploadConnectionIcon,
   refreshVerifiedStats,
+  setVerifiedStatVisibility,
 } from "./services/supabase";
 import type {
   Connection,
@@ -186,6 +187,7 @@ import type {
 } from "./types";
 import { canRefreshAt, cooldownLabel, refreshStatusLabel, revealDelay, verifiedXpSummary } from "./lib/verifiedStats";
 import {avatarIconIds,presetAvatarIds} from './lib/avatars'
+import { moveCardConnection, orderedCardConnections, toggleCardConnection } from "./lib/cardOrder";
 
 const StoreContext = ({ children }: { children: ReactNode }) => {
   const [ready, setReady] = useState(!isSupabaseConfigured);
@@ -1385,8 +1387,9 @@ function VerifiedStatsPanel(){
   const reload=()=>loadVerifiedStats(profile.xp).then(data=>{setStats(data.stats);setSummary(data.summary)})
   useEffect(()=>{let active=true;if(!realMode)return;loadVerifiedStats(profile.xp).then(data=>{if(active){setStats(data.stats);setSummary(data.summary)}});return()=>{active=false}},[profile.xp,realMode])
   const refresh=async(stat:VerifiedStat)=>{if(!stat.connectionId||refreshing)return;setRefreshing(stat.id);await refreshVerifiedStats(stat.connectionId,stat.providerId);await reload();setRefreshing('')}
+  const setPublic=async(stat:VerifiedStat)=>{if(!stat.connectionId)return;const next=!stat.isPublic;setStats(current=>current.map(item=>item.connectionId===stat.connectionId?{...item,isPublic:next}:item));const error=await setVerifiedStatVisibility(stat.connectionId,next);if(error)await reload()}
   const prepared=connections.filter(connection=>providerById(connection.provider)?.supportsVerifiedStats)
-  return <section className="panel verified-panel"><header><div><span className="verified-kicker"><BadgeCheck/> VERIFIED STATS</span><h2>Verified XP</h2><p>Only official API or OAuth-confirmed metrics can contribute.</p></div><div className="verified-xp"><strong>{summary.verifiedXp}</strong><span>{summary.verifiedPercent}% of {summary.totalXp} XP</span></div></header>{stats.length?<div className="verified-stat-list">{stats.map((stat,index)=><RevealItem key={stat.id} index={index}><article><ProviderMark id={stat.providerId}/><div><strong>{stat.metricValue.toLocaleString()}</strong><span>{stat.metricLabel}</span><small>{stat.lastRefreshedAt?`Updated ${new Date(stat.lastRefreshedAt).toLocaleDateString()}`:'Awaiting first refresh'} · {refreshStatusLabel(stat.refreshStatus)}</small></div><Button tone="secondary" disabled={refreshing===stat.id||!stat.connectionId||!canRefreshAt(stat.nextRefreshEligibleAt)} onClick={()=>void refresh(stat)}>{refreshing===stat.id?'REFRESHING…':canRefreshAt(stat.nextRefreshEligibleAt)?'REFRESH':'COOLDOWN'}</Button>{!canRefreshAt(stat.nextRefreshEligibleAt)&&<small className="cooldown-copy">{cooldownLabel(stat.nextRefreshEligibleAt)}</small>}</article></RevealItem>)}</div>:<div className="verified-empty"><BadgeCheck/><div><strong>{prepared.length?'Verified Stats architecture is ready.':'Connect a stats-ready provider.'}</strong><p>{prepared.length?`${prepared.map(item=>providerById(item.provider).name).join(', ')} ${prepared.length===1?'is':'are'} prepared for future official adapters.`:'GitHub, YouTube, Twitch, Steam, Roblox, Modrinth, CurseForge, npm and Spotify are priority candidates.'}</p><small>No user-entered number is treated as verified.</small></div></div>}</section>
+  return <section className="panel verified-panel"><header><div><span className="verified-kicker"><BadgeCheck/> VERIFIED STATS</span><h2>Verified XP</h2><p>Only official API or OAuth-confirmed metrics can contribute.</p></div><div className="verified-xp"><strong>{summary.verifiedXp}</strong><span>{summary.verifiedPercent}% of {summary.totalXp} XP</span></div></header>{stats.length?<div className="verified-stat-list">{stats.map((stat,index)=><RevealItem key={stat.id} index={index}><article><ProviderMark id={stat.providerId}/><div><strong>{stat.metricValue.toLocaleString()}</strong><span>{stat.metricLabel}</span><small>{stat.lastRefreshedAt?`Updated ${new Date(stat.lastRefreshedAt).toLocaleDateString()}`:'Awaiting first refresh'} · {refreshStatusLabel(stat.refreshStatus)}</small><label className="verified-visibility"><input type="checkbox" checked={stat.isPublic} onChange={()=>void setPublic(stat)}/> Show on public profile</label></div><Button tone="secondary" disabled={refreshing===stat.id||!stat.connectionId||!canRefreshAt(stat.nextRefreshEligibleAt)} onClick={()=>void refresh(stat)}>{refreshing===stat.id?'REFRESHING…':canRefreshAt(stat.nextRefreshEligibleAt)?'REFRESH':'COOLDOWN'}</Button>{!canRefreshAt(stat.nextRefreshEligibleAt)&&<small className="cooldown-copy">{cooldownLabel(stat.nextRefreshEligibleAt)}</small>}</article></RevealItem>)}</div>:<div className="verified-empty"><BadgeCheck/><div><strong>{prepared.length?'Connect an official account to activate verified stats.':'Connect a stats-ready provider.'}</strong><p>{prepared.length?`${prepared.map(item=>providerById(item.provider).name).join(', ')} ${prepared.length===1?'supports':'support'} official verified metrics when configured.`:'GitHub and YouTube are the first official adapters.'}</p><small>No user-entered number is treated as verified.</small></div></div>}</section>
 }
 function Dashboard() {
   const { profile, connections } = useTap();
@@ -1897,11 +1900,9 @@ function Connections() {
     }
   };
   const oauth = async (id: ProviderId) => {
-    if (!["github", "discord", "spotify", "youtube"].includes(id)) return;
+    if (id !== "github" && id !== "youtube") return;
     try {
-      await connectOAuth(
-        id === "youtube" ? "google" : (id as "github" | "discord" | "spotify"),
-      );
+      await connectOAuth(id);
     } catch {
       setMessage(
         `${providerById(id).name} automatic connection isn’t configured yet. Add it manually instead.`,
@@ -1914,6 +1915,9 @@ function Connections() {
       cards.map((card) => ({
         ...card,
         connectionIds: card.connectionIds.filter(
+          (connectionId) => connectionId !== id,
+        ),
+        hiddenConnectionIds: card.hiddenConnectionIds.filter(
           (connectionId) => connectionId !== id,
         ),
       })),
@@ -2160,16 +2164,8 @@ function Connections() {
 
 function Cards() {
   const { profile, cards, setCards, connections } = useTap();
-  const move = (card: TapCard, id: string, dir: -1 | 1) => {
-    const list = [...card.connectionIds];
-    const from = list.indexOf(id);
-    const to = from + dir;
-    if (from < 0 || to < 0 || to >= list.length) return;
-    [list[from], list[to]] = [list[to], list[from]];
-    setCards(
-      cards.map((c) => (c.id === card.id ? { ...c, connectionIds: list } : c)),
-    );
-  };
+  const updateCard = (updated: TapCard) =>
+    setCards(cards.map((card) => (card.id === updated.id ? updated : card)));
   return (
     <AppShell>
       <header className="page-head">
@@ -2190,6 +2186,7 @@ function Cards() {
                   type: "social",
                   visible: true,
                   connectionIds: [],
+                  hiddenConnectionIds: [],
                 },
               ])
             }
@@ -2236,10 +2233,12 @@ function Cards() {
                   </button>
                 )}
               </div>
-              {connections.map((c) => {
-                const selected = card.connectionIds.includes(c.id);
+              {orderedCardConnections(card, connections).map((c) => {
+                const selected =
+                  card.connectionIds.includes(c.id) &&
+                  !card.hiddenConnectionIds.includes(c.id);
                 return (
-                  <div className="check-row" key={c.id}>
+                  <div className={`check-row ${selected ? "" : "card-connection-hidden"}`} key={c.id}>
                     <label>
                       <span>
                         <ProviderMark id={c.provider} />
@@ -2248,35 +2247,25 @@ function Cards() {
                       <input
                         type="checkbox"
                         checked={selected}
-                        onChange={() =>
-                          setCards(
-                            cards.map((x) =>
-                              x.id === card.id
-                                ? {
-                                    ...x,
-                                    connectionIds: selected
-                                      ? x.connectionIds.filter(
-                                          (i) => i !== c.id,
-                                        )
-                                      : [...x.connectionIds, c.id],
-                                  }
-                                : x,
-                            ),
-                          )
-                        }
+                        aria-label={`${selected ? "Hide" : "Show"} ${c.displayLabel} on ${card.name}`}
+                        onChange={() => updateCard(toggleCardConnection(card, c.id))}
                       />
                     </label>
                     {selected && (
                       <span className="order-actions">
                         <button
                           aria-label={`Move ${c.displayLabel} up`}
-                          onClick={() => move(card, c.id, -1)}
+                          className="order-up"
+                          type="button"
+                          onClick={() => updateCard(moveCardConnection(card, c.id, -1))}
                         >
                           ↑
                         </button>
                         <button
                           aria-label={`Move ${c.displayLabel} down`}
-                          onClick={() => move(card, c.id, 1)}
+                          className="order-down"
+                          type="button"
+                          onClick={() => updateCard(moveCardConnection(card, c.id, 1))}
                         >
                           ↓
                         </button>

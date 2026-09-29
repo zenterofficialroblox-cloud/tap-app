@@ -128,18 +128,14 @@ export async function resendVerification(email: string) {
     ? messageFor(error, "We could not resend the verification email.")
     : null;
 }
-export async function connectOAuth(
-  provider: "github" | "discord" | "spotify" | "google",
-) {
+export async function connectOAuth(provider: "github" | "youtube") {
   if (!supabase)
     throw new Error("Automatic connection needs Supabase configuration");
-  return supabase.auth.linkIdentity({
-    provider,
-    options: {
-      redirectTo: `${appUrl}/connections?oauth=review`,
-      scopes: provider === "github" ? "read:user" : undefined,
-    },
-  });
+  const {data,error}=await supabase.functions.invoke('provider-oauth-start',{body:{providerId:provider}})
+  if(error)throw error
+  const authorizationUrl=String(data?.authorizationUrl||'')
+  if(!authorizationUrl.startsWith('https://'))throw new Error(String(data?.error||'OAuth is not configured.'))
+  window.location.assign(authorizationUrl)
 }
 
 const safeImageUrl = (value: unknown) =>
@@ -234,7 +230,7 @@ export async function loadAppData(): Promise<AppData> {
       supabase
         .from("profiles")
         .select(
-          "username,display_name,bio,avatar_url,avatar_mode,default_avatar_id,discoverable,accent_color,theme_id,visibility,xp,onboarding_complete",
+          "username,display_name,bio,avatar_url,avatar_mode,default_avatar_id,avatar_icon_id,avatar_icon_color,avatar_background_color,avatar_background_color_2,discoverable,accent_color,theme_id,visibility,xp,onboarding_complete",
         )
         .eq("user_id", user.id)
         .maybeSingle(),
@@ -247,7 +243,7 @@ export async function loadAppData(): Promise<AppData> {
       supabase
         .from("cards")
         .select(
-          "id,slug,name,type,visible,position,card_connections(connection_id,position)",
+          "id,slug,name,type,visible,position,card_connections(connection_id,position,enabled)",
         )
         .order("position"),
       supabase
@@ -285,10 +281,18 @@ export async function loadAppData(): Promise<AppData> {
       ...((row.card_connections || []) as {
         connection_id: string;
         position: number;
+        enabled: boolean;
       }[]),
     ]
       .sort((a, b) => a.position - b.position)
       .map((x) => x.connection_id),
+    hiddenConnectionIds: [
+      ...((row.card_connections || []) as {
+        connection_id: string;
+        position: number;
+        enabled: boolean;
+      }[]),
+    ].filter((x) => x.enabled === false).map((x) => x.connection_id),
   }));
   return { profile, connections, cards };
 }
@@ -463,6 +467,7 @@ export async function saveCards(cards: TapCard[]) {
             card_id: card.id,
             connection_id,
             position: index,
+            enabled: !card.hiddenConnectionIds.includes(connection_id),
           })),
         );
       if (linkError) return messageFor(linkError, "Could not update the card.");
@@ -546,6 +551,7 @@ export async function getPublicProfile(
         type: String(c.type || "main") as TapCard["type"],
         visible: true,
         connectionIds: connections.map((x) => x.id),
+        hiddenConnectionIds: [],
       }
     : undefined;
   return { status, profile, connections, card };
@@ -608,10 +614,15 @@ export async function saveFeaturedBadges(codes: string[]) {
 }
 export async function loadVerifiedStats(totalXp:number):Promise<{stats:VerifiedStat[];summary:VerifiedXpSummary}>{
   if(!supabase)return {stats:[],summary:verifiedXpSummary(totalXp,0)}
-  const [statsResult,xpResult]=await Promise.all([supabase.from('verified_stats').select('id,connection_id,provider_id,metric_key,metric_value,metric_label,metric_type,last_refreshed_at,next_refresh_eligible_at,refresh_status').order('provider_id'),supabase.rpc('get_verified_xp_summary')])
+  const [statsResult,xpResult]=await Promise.all([supabase.from('verified_stats').select('id,connection_id,provider_id,metric_key,metric_value,metric_label,metric_type,is_public,last_refreshed_at,next_refresh_eligible_at,refresh_status').order('provider_id'),supabase.rpc('get_verified_xp_summary')])
   if(statsResult.error||xpResult.error)return {stats:[],summary:verifiedXpSummary(totalXp,0)}
   const raw=xpResult.data as {verified_xp?:number;total_xp?:number}|null
-  return {stats:(statsResult.data||[]).map(row=>({id:String(row.id),connectionId:row.connection_id?String(row.connection_id):undefined,providerId:String(row.provider_id),metricKey:String(row.metric_key),metricValue:Number(row.metric_value),metricLabel:String(row.metric_label),metricType:String(row.metric_type) as VerifiedStat['metricType'],lastRefreshedAt:row.last_refreshed_at?String(row.last_refreshed_at):undefined,nextRefreshEligibleAt:row.next_refresh_eligible_at?String(row.next_refresh_eligible_at):undefined,refreshStatus:String(row.refresh_status) as VerifiedStat['refreshStatus']})),summary:verifiedXpSummary(Number(raw?.total_xp??totalXp),Number(raw?.verified_xp||0))}
+  return {stats:(statsResult.data||[]).map(row=>({id:String(row.id),connectionId:row.connection_id?String(row.connection_id):undefined,providerId:String(row.provider_id),metricKey:String(row.metric_key),metricValue:Number(row.metric_value),metricLabel:String(row.metric_label),metricType:String(row.metric_type) as VerifiedStat['metricType'],isPublic:Boolean(row.is_public),lastRefreshedAt:row.last_refreshed_at?String(row.last_refreshed_at):undefined,nextRefreshEligibleAt:row.next_refresh_eligible_at?String(row.next_refresh_eligible_at):undefined,refreshStatus:String(row.refresh_status) as VerifiedStat['refreshStatus']})),summary:verifiedXpSummary(Number(raw?.total_xp??totalXp),Number(raw?.verified_xp||0))}
+}
+export async function setVerifiedStatVisibility(connectionId:string,isPublic:boolean){
+  if(!supabase)return 'Supabase is not configured.'
+  const {error}=await supabase.rpc('set_verified_stat_visibility',{target_connection:connectionId,make_public:isPublic})
+  return error?messageFor(error,'Could not update verified stat visibility.'):null
 }
 export async function refreshVerifiedStats(connectionId:string,providerId:ProviderId){
   if(!supabase)return {status:'unavailable',error:'Verified refresh requires Supabase.'}

@@ -4,6 +4,7 @@ import { demoConnections, demoProfile, emptyProfile } from '../data/demo'
 import { filterProviders, mainProviderIds, providers } from './providers'
 import { canRefreshAt, cooldownLabel, earnedMilestones, revealDelay, shouldAnimateReveal, snapshotRows, verifiedXpSummary } from './verifiedStats'
 import {avatarIconIds,normalizeAvatarIcon,normalizeAvatarMode,normalizePresetAvatar,presetAvatarIds,validAvatarColor} from './avatars'
+import { moveCardConnection, orderedCardConnections, toggleCardConnection } from './cardOrder'
 
 describe('critical profile logic',()=>{
   it('validates canonical usernames',()=>{expect(usernameSchema.parse('Pixel_King')).toBe('pixel_king');expect(()=>usernameSchema.parse('ad min')).toThrow();expect(()=>usernameSchema.parse('admin')).toThrow()})
@@ -30,4 +31,6 @@ describe('critical profile logic',()=>{
   it('normalizes and persists all three avatar modes safely',()=>{expect(normalizeAvatarMode('custom')).toBe('photo');expect(normalizeAvatarMode('icon')).toBe('icon');expect(normalizeAvatarMode('broken')).toBe('preset')})
   it('looks up preset and icon avatars with safe fallbacks',()=>{expect(presetAvatarIds).toHaveLength(5);expect(avatarIconIds).toHaveLength(5);expect(normalizePresetAvatar('robot')).toBe('robot');expect(normalizePresetAvatar('missing')).toBe('cosmic');expect(normalizeAvatarIcon('code')).toBe('code');expect(normalizeAvatarIcon('missing')).toBe('orbit')})
   it('validates icon avatar colors',()=>{expect(validAvatarColor('#12ABef')).toBe(true);expect(validAvatarColor('#fff')).toBe(false);expect(validAvatarColor('red')).toBe(false)})
+  it('moves visible card connections and keeps hidden rows at the bottom',()=>{const card={id:'c',slug:'main',name:'MAIN',type:'main' as const,visible:true,connectionIds:['github','discord','youtube'],hiddenConnectionIds:['discord']};expect(moveCardConnection(card,'youtube',-1).connectionIds).toEqual(['youtube','discord','github']);expect(orderedCardConnections(card,demoConnections).slice(-1)[0].id).not.toBe('github')})
+  it('restores a hidden card connection at its saved priority',()=>{const card={id:'c',slug:'main',name:'MAIN',type:'main' as const,visible:true,connectionIds:['github','discord'],hiddenConnectionIds:['github']};const restored=toggleCardConnection(card,'github');expect(restored.connectionIds).toEqual(['github','discord']);expect(restored.hiddenConnectionIds).toEqual([])})
 })
