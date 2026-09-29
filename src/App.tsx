@@ -390,7 +390,7 @@ function ProviderMark({ id, iconUrl }: { id: ProviderId; iconUrl?: string }) {
   const p = providerById(id);
   const icon = brandIcons[id];
   const [failed, setFailed] = useState("");
-  const packagedIcon=id==='minecraft'?'/provider-icons/minecraft.png':id==='linkedin'?'/provider-icons/linkedin.svg':id==='codepen'?'/provider-icons/codepen.svg':undefined
+  const packagedIcon=id==='minecraft'?'/provider-icons/minecraft.png':id==='xbox'?'/provider-icons/xbox.svg':id==='linkedin'?'/provider-icons/linkedin.svg':id==='codepen'?'/provider-icons/codepen.svg':undefined
   const imageSource=iconUrl||packagedIcon
   const custom = imageSource && failed !== imageSource;
   const Fallback=p.category==='gaming'?Gamepad2:p.category==='developer'?Code2:p.category==='creator'?Play:p.category==='social'?UsersRound:Globe2
