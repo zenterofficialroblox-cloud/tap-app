@@ -324,7 +324,7 @@ function Logo() {
   });
   return (
     <Link className="logo" to={home} aria-label="TAP home">
-      <span>T</span>TAP
+      <img src="/tap-icon-192.png" alt="" aria-hidden="true" />TAP
     </Link>
   );
 }

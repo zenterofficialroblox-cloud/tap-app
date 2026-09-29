@@ -11,7 +11,11 @@ export default defineConfig({
       manifest: {
         name: 'TAP — Social Identity', short_name: 'TAP', start_url: '/', display: 'standalone',
         background_color: '#07070b', theme_color: '#07070b',
-        icons: [{ src: '/tap-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }]
+        icons: [
+          { src: '/tap-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/tap-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/tap-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+        ]
       }
     })
   ]
