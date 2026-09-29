@@ -19,10 +19,13 @@ Deno.serve(async request=>{
   if(existing?.next_refresh_eligible_at&&new Date(existing.next_refresh_eligible_at)>new Date())return json({status:'cooldown',nextRefreshEligibleAt:existing.next_refresh_eligible_at},429)
   const adapter=adapterFor(body.providerId)
   if(!adapter)return json({status:'unavailable',message:'Verified Stats support is prepared but this provider adapter is not live yet.'},501)
+  const {data:account}=await admin.from('provider_accounts').select('id,provider_account_id,access_token').eq('user_id',user.id).eq('connection_id',connection.id).eq('provider_id',body.providerId).maybeSingle()
+  if(!account?.access_token)return json({status:'unavailable',message:'Connect and authorize this provider before refreshing verified stats.'},409)
   const now=new Date();const next=new Date(now.getTime()+refreshCooldownMinutes*60_000)
   try{
     await admin.from('verified_stats').update({refresh_status:'pending',last_error:null}).eq('user_id',user.id).eq('provider_id',body.providerId)
-    const metrics=await adapter.refresh({providerId:body.providerId})
+    const refreshed=await adapter.refresh({providerId:body.providerId,accessToken:account.access_token,externalId:account.provider_account_id});const metrics=refreshed.metrics
+    await admin.from('provider_accounts').update({username:refreshed.identity.username,display_name:refreshed.identity.displayName,provider_account_id:refreshed.identity.accountId,updated_at:now.toISOString()}).eq('id',account.id)
     const rows=metrics.map(metric=>({user_id:user.id,connection_id:connection.id,provider_id:body.providerId,metric_key:metric.key,metric_value:metric.value,metric_label:metric.label,metric_type:metric.type,is_verified:true,source_kind:'official_api',last_refreshed_at:now.toISOString(),next_refresh_eligible_at:next.toISOString(),refresh_status:'success',last_error:null,updated_at:now.toISOString()}))
     const {error}=await admin.from('verified_stats').upsert(rows,{onConflict:'user_id,provider_id,metric_key'});if(error)throw error
     await admin.from('verified_stat_snapshots').insert(rows.map(row=>({user_id:row.user_id,connection_id:row.connection_id,provider_id:row.provider_id,metric_key:row.metric_key,metric_value:row.metric_value,captured_at:now.toISOString()})))

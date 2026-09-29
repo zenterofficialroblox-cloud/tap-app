@@ -1,10 +1,12 @@
 export type VerifiedMetric={key:string;value:number;label:string;type:'COUNT'|'BIG_COUNT'|'TIME'|'RATIO'|'SCORE'}
-export type ProviderRefreshContext={providerId:string;accessToken?:string;externalId?:string}
-export type ProviderAdapter={refresh:(context:ProviderRefreshContext)=>Promise<VerifiedMetric[]>}
-
-// Provider secrets and API-specific adapters are added here in 0.5B. Never
-// accept metric values from the browser or user-authored connection metadata.
-export const providerAdapters:Record<string,ProviderAdapter>={}
+export type ProviderIdentity={accountId:string;username:string;displayName:string}
+export type ProviderRefreshContext={providerId:string;accessToken:string;externalId?:string}
+export type ProviderRefreshResult={identity:ProviderIdentity;metrics:VerifiedMetric[]}
+export type ProviderAdapter={providerId:string;refresh:(context:ProviderRefreshContext)=>Promise<ProviderRefreshResult>}
+const count=(key:string,value:unknown,label:string):VerifiedMetric=>({key,value:Math.max(0,Number(value)||0),label,type:'COUNT'})
+const github:ProviderAdapter={providerId:'github',async refresh({accessToken}){const headers={Authorization:`Bearer ${accessToken}`,Accept:'application/vnd.github+json','User-Agent':'TAP-Verified-Stats'};const userResponse=await fetch('https://api.github.com/user',{headers});if(!userResponse.ok)throw new Error('GitHub authorization expired.');const user=await userResponse.json();let stars=0,downloads=0,page=1;while(page<=10){const response=await fetch(`https://api.github.com/user/repos?visibility=public&affiliation=owner&per_page=100&page=${page}`,{headers});if(!response.ok)throw new Error('GitHub repositories could not be read.');const repos=await response.json();for(const repo of repos){stars+=Number(repo.stargazers_count)||0;const releases=await fetch(`https://api.github.com/repos/${encodeURIComponent(user.login)}/${encodeURIComponent(repo.name)}/releases?per_page=100`,{headers});if(releases.ok)for(const release of await releases.json())for(const asset of release.assets||[])downloads+=Number(asset.download_count)||0}if(repos.length<100)break;page++}return {identity:{accountId:String(user.id),username:String(user.login),displayName:String(user.name||user.login)},metrics:[count('followers',user.followers,'Followers'),count('repositories',user.public_repos,'Public repositories'),count('stars',stars,'Repository stars'),count('downloads',downloads,'Release downloads')]}}}
+const youtube:ProviderAdapter={providerId:'youtube',async refresh({accessToken}){const response=await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true',{headers:{Authorization:`Bearer ${accessToken}`}});if(!response.ok)throw new Error('YouTube authorization expired.');const channel=(await response.json()).items?.[0];if(!channel)throw new Error('No YouTube channel is available for this account.');const stats=channel.statistics||{};return {identity:{accountId:String(channel.id),username:String(channel.snippet?.customUrl||channel.id).replace(/^@/,''),displayName:String(channel.snippet?.title||'YouTube')},metrics:[count('subscribers',stats.subscriberCount,'Subscribers (provider reported)'),count('views',stats.viewCount,'Total views'),count('videos',stats.videoCount,'Videos')]}}}
+export const providerAdapters:Record<string,ProviderAdapter>={github,youtube}
 export const refreshCooldownMinutes=60
 
 export function adapterFor(providerId:string){return providerAdapters[providerId]}

@@ -8,6 +8,7 @@ import type {
   VerifiedStat,
   VerifiedXpSummary,
 } from "../types";
+import {normalizeAvatarIcon,normalizeAvatarMode,normalizePresetAvatar,safeAvatar,validAvatarColor} from '../lib/avatars'
 import { hasValidDestination, isHexColor } from "../lib/core";
 import { verifiedXpSummary } from "../lib/verifiedStats";
 
@@ -149,14 +150,12 @@ const mapProfile = (data: Record<string, unknown>): Profile => ({
   displayName: String(data.display_name || ""),
   bio: String(data.bio || ""),
   avatarUrl: safeImageUrl(data.avatar_url),
-  avatarMode: ["default", "custom"].includes(String(data.avatar_mode))
-    ? (String(data.avatar_mode) as Profile["avatarMode"])
-    : "initials",
-  defaultAvatarId: ["violet", "ocean", "sunset", "neon", "frost"].includes(
-    String(data.default_avatar_id),
-  )
-    ? String(data.default_avatar_id)
-    : "violet",
+  avatarMode: normalizeAvatarMode(data.avatar_mode),
+  defaultAvatarId: normalizePresetAvatar(data.default_avatar_id),
+  avatarIconId:normalizeAvatarIcon(data.avatar_icon_id),
+  avatarIconColor:validAvatarColor(String(data.avatar_icon_color))?String(data.avatar_icon_color):'#FFFFFF',
+  avatarBackgroundColor:validAvatarColor(String(data.avatar_background_color))?String(data.avatar_background_color):'#6D4AFF',
+  avatarBackgroundColor2:validAvatarColor(String(data.avatar_background_color_2))?String(data.avatar_background_color_2):undefined,
   discoverable: data.discoverable !== false,
   accentColor: isHexColor(String(data.accent_color))
     ? String(data.accent_color)
@@ -300,15 +299,20 @@ export async function saveCurrentProfile(profile: Profile) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Your session expired. Sign in again." };
+  const safe=safeAvatar(profile)
   const { error } = await supabase
     .from("profiles")
     .update({
-      username: profile.username || null,
-      display_name: profile.displayName,
-      bio: profile.bio,
-      avatar_url: profile.avatarUrl || null,
-      avatar_mode: profile.avatarMode,
-      default_avatar_id: profile.defaultAvatarId,
+      username: safe.username || null,
+      display_name: safe.displayName,
+      bio: safe.bio,
+      avatar_url: safe.avatarUrl || null,
+      avatar_mode: safe.avatarMode,
+      default_avatar_id: safe.defaultAvatarId,
+      avatar_icon_id:safe.avatarIconId,
+      avatar_icon_color:safe.avatarIconColor,
+      avatar_background_color:safe.avatarBackgroundColor,
+      avatar_background_color_2:safe.avatarBackgroundColor2||null,
       discoverable: profile.discoverable,
       accent_color: profile.accentColor,
       theme_id: profile.themeId,
@@ -560,8 +564,9 @@ export async function searchProfiles(
     username: String(row.username),
     displayName: String(row.display_name),
     avatarUrl: row.avatar_url ? String(row.avatar_url) : undefined,
-    avatarMode: String(row.avatar_mode || "initials") as Profile["avatarMode"],
-    defaultAvatarId: String(row.default_avatar_id || "violet"),
+    avatarMode: normalizeAvatarMode(row.avatar_mode),
+    defaultAvatarId: normalizePresetAvatar(row.default_avatar_id),
+    avatarIconId:normalizeAvatarIcon(row.avatar_icon_id),avatarIconColor:String(row.avatar_icon_color||'#FFFFFF'),avatarBackgroundColor:String(row.avatar_background_color||'#6D4AFF'),avatarBackgroundColor2:row.avatar_background_color_2?String(row.avatar_background_color_2):undefined,
     level: row.level == null ? undefined : Number(row.level),
     isPrivate: Boolean(row.is_private),
   }));

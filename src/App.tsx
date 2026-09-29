@@ -39,6 +39,13 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
+  UsersRound,
+  Gamepad2,
+  Code2,
+  Play,
+  Headphones,
+  Orbit,
+  Zap,
   X,
 } from "lucide-react";
 import githubIcon from "simple-icons/icons/github.svg";
@@ -131,7 +138,6 @@ import {
   emptyProfile,
 } from "./data/demo";
 import {
-  avatarInitials,
   detectProviderFromUrl,
   hasValidDestination,
   isDemoUsername,
@@ -179,6 +185,7 @@ import type {
   VerifiedXpSummary,
 } from "./types";
 import { canRefreshAt, cooldownLabel, refreshStatusLabel, revealDelay, verifiedXpSummary } from "./lib/verifiedStats";
+import {avatarIconIds,presetAvatarIds} from './lib/avatars'
 
 const StoreContext = ({ children }: { children: ReactNode }) => {
   const [ready, setReady] = useState(!isSupabaseConfigured);
@@ -378,6 +385,7 @@ function ProviderMark({ id, iconUrl }: { id: ProviderId; iconUrl?: string }) {
   const icon = brandIcons[id];
   const [failed, setFailed] = useState("");
   const custom = iconUrl && failed !== iconUrl;
+  const Fallback=p.category==='gaming'?Gamepad2:p.category==='developer'?Code2:p.category==='creator'?Play:p.category==='social'?UsersRound:Globe2
   return (
     <span
       className="provider-mark"
@@ -387,11 +395,7 @@ function ProviderMark({ id, iconUrl }: { id: ProviderId; iconUrl?: string }) {
         <img src={iconUrl} onError={() => setFailed(iconUrl)} alt="" />
       ) : icon ? (
         <img className="brand-icon" src={icon} alt="" />
-      ) : id === "website" || id === "custom" ? (
-        <Globe2 />
-      ) : (
-        <b>{p.short}</b>
-      )}
+      ) : <Fallback aria-hidden="true" />}
     </span>
   );
 }
@@ -404,12 +408,13 @@ function Avatar({
 }) {
   const [failed, setFailed] = useState("");
   const custom =
-    profile.avatarMode === "custom" &&
+    profile.avatarMode === "photo" &&
     profile.avatarUrl &&
     failed !== profile.avatarUrl;
   return (
     <div
-      className={`avatar avatar-${profile.defaultAvatarId} ${large ? "avatar-large" : ""}`}
+      className={`avatar avatar-${profile.defaultAvatarId} avatar-mode-${profile.avatarMode} ${large ? "avatar-large" : ""}`}
+      style={profile.avatarMode==='icon'?{'--avatar-icon':profile.avatarIconColor,'--avatar-bg':profile.avatarBackgroundColor,'--avatar-bg-2':profile.avatarBackgroundColor2||profile.avatarBackgroundColor} as React.CSSProperties:undefined}
     >
       {custom ? (
         <img
@@ -417,13 +422,7 @@ function Avatar({
           onError={() => setFailed(profile.avatarUrl || "")}
           alt=""
         />
-      ) : profile.avatarMode === "default" ? (
-        <span className="avatar-orbit">
-          <i />
-        </span>
-      ) : (
-        avatarInitials(profile.displayName)
-      )}
+      ) : profile.avatarMode === "icon" ? <span className={`avatar-symbol avatar-symbol-${profile.avatarIconId}`}>{profile.avatarIconId==='bolt'?<Zap/>:profile.avatarIconId==='gamepad'?<Gamepad2/>:profile.avatarIconId==='headphones'?<Headphones/>:profile.avatarIconId==='code'?<Code2/>:<Orbit/>}</span> : <span className="preset-art" aria-hidden="true" />}
     </div>
   );
 }
@@ -742,7 +741,6 @@ function ThemePicker({
     </fieldset>
   );
 }
-const avatarStyles = ["violet", "ocean", "sunset", "neon", "frost"] as const;
 function AvatarPicker({
   profile,
   onChange,
@@ -759,42 +757,38 @@ function AvatarPicker({
         <Avatar profile={profile} large />
         <div>
           <strong>Choose your look</strong>
-          <small>Use a TAP style, initials, or your own photo.</small>
+          <small>Use a photo, premium TAP avatar, or an icon with your colors.</small>
         </div>
       </div>
       <div className="avatar-styles">
-        {avatarStyles.map((id) => (
+        {presetAvatarIds.map((id) => (
           <button
             type="button"
             aria-label={`Use ${id} avatar`}
             aria-pressed={
-              profile.avatarMode === "default" && profile.defaultAvatarId === id
+              profile.avatarMode === "preset" && profile.defaultAvatarId === id
             }
             onClick={() =>
               onChange({
                 ...profile,
-                avatarMode: "default",
+                avatarMode: "preset",
                 defaultAvatarId: id,
               })
             }
             key={id}
           >
-            <span className={`avatar avatar-${id}`}>
-              <span className="avatar-orbit">
-                <i />
-              </span>
-            </span>
+            <span className={`avatar avatar-${id}`}><span className="preset-art" /></span>
           </button>
         ))}
       </div>
+      <div className="avatar-icon-grid" aria-label="Icon avatars">
+        {avatarIconIds.map(id=><button type="button" key={id} aria-label={`Use ${id} icon avatar`} aria-pressed={profile.avatarMode==='icon'&&profile.avatarIconId===id} onClick={()=>onChange({...profile,avatarMode:'icon',avatarIconId:id})}><Avatar profile={{...profile,avatarMode:'icon',avatarIconId:id}} /></button>)}
+      </div>
+      <div className="avatar-color-row">
+        <label>Icon color<input value={profile.avatarIconColor} onChange={e=>onChange({...profile,avatarMode:'icon',avatarIconColor:e.target.value.toUpperCase()})} pattern="#[0-9A-Fa-f]{6}" aria-label="Avatar icon hex color" /></label>
+        <label>Background<input value={profile.avatarBackgroundColor} onChange={e=>onChange({...profile,avatarMode:'icon',avatarBackgroundColor:e.target.value.toUpperCase()})} pattern="#[0-9A-Fa-f]{6}" aria-label="Avatar background hex color" /></label>
+      </div>
       <div className="avatar-actions">
-        <Button
-          type="button"
-          tone={profile.avatarMode === "initials" ? "primary" : "secondary"}
-          onClick={() => onChange({ ...profile, avatarMode: "initials" })}
-        >
-          USE INITIALS
-        </Button>
         <label className="btn btn-secondary">
           UPLOAD PHOTO
           <input
@@ -1154,7 +1148,7 @@ function Onboarding() {
     setSaving(true);
     try {
       const avatarUrl = await uploadAvatar(file);
-      setDraft((current) => ({ ...current, avatarUrl, avatarMode: "custom" }));
+      setDraft((current) => ({ ...current, avatarUrl, avatarMode: "photo" }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not upload that image.");
     } finally {
@@ -1495,6 +1489,10 @@ function ProfileSearch() {
     avatarUrl: result.avatarUrl,
     avatarMode: result.avatarMode,
     defaultAvatarId: result.defaultAvatarId,
+    avatarIconId: result.avatarIconId || emptyProfile.avatarIconId,
+    avatarIconColor: result.avatarIconColor || emptyProfile.avatarIconColor,
+    avatarBackgroundColor: result.avatarBackgroundColor || emptyProfile.avatarBackgroundColor,
+    avatarBackgroundColor2: result.avatarBackgroundColor2,
     onboardingComplete: true,
   });
   return (
