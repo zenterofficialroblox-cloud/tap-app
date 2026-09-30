@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useEffect,
   useRef,
   useState,
@@ -133,12 +134,12 @@ import freecodecampIcon from "simple-icons/icons/freecodecamp.svg";
 import hacktheboxIcon from "simple-icons/icons/hackthebox.svg";
 import tryhackmeIcon from "simple-icons/icons/tryhackme.svg";
 import {
-  badges,
   demoCards,
   demoConnections,
   demoProfile,
   emptyProfile,
 } from "./data/demo";
+import { badgeAccent, badges, equipBadge, unequipBadge, type BadgeCategory } from "./data/badges";
 import {
   detectProviderFromUrl,
   hasValidDestination,
@@ -456,6 +457,11 @@ function RevealItem({children,index=0}:{children:ReactNode;index?:number}){
   useEffect(()=>{const node=ref.current;if(!node)return;const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('reduce-motion');if(reduced){const timer=setTimeout(()=>setVisible(true),0);return()=>clearTimeout(timer)}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setVisible(true);observer.disconnect()}},{threshold:.18});observer.observe(node);return()=>observer.disconnect()},[])
   return <div ref={ref} className={`reveal-item ${visible?'is-visible':''}`} style={{'--reveal-delay':`${revealDelay(index)}ms`} as React.CSSProperties}>{children}</div>
 }
+function BadgeArt({id,size="card"}:{id:string;size?:"tiny"|"card"|"help"}){
+  const badge=badges.find(item=>item.id===id);
+  if(!badge)return null;
+  return <img className={`badge-art badge-art-${size}`} src={badge.icon} alt="" loading="lazy" decoding="async" aria-hidden="true"/>;
+}
 function ProfileCard({
   compact = false,
   card,
@@ -508,7 +514,7 @@ function ProfileCard({
         {profile.featuredBadges.length > 0 && (
           <div className="badge-row">
             {visibleBadges.map((b) => (
-              <span key={b}>✦ {badges.find((x) => x.id === b)?.name}</span>
+              <span key={b}><BadgeArt id={b} size="tiny"/>{badges.find((x) => x.id === b)?.name}</span>
             ))}
             {profile.featuredBadges.length > 3 && (
               <button type="button" className="profile-expand-toggle badge-toggle" aria-label={badgesExpanded ? "Show fewer badges" : "Show all badges"} aria-expanded={badgesExpanded} onClick={() => setBadgesExpanded((value) => !value)}>
@@ -2333,10 +2339,11 @@ function Cards() {
 function Badges() {
   const { profile, setProfile } = useTap();
   const [message, setMessage] = useState("");
+  const [category,setCategory]=useState<"All"|BadgeCategory>("All");
   const toggle = async (id: string, featured: boolean) => {
     const featuredBadges = featured
-      ? profile.featuredBadges.filter((x) => x !== id)
-      : [...profile.featuredBadges, id];
+      ? unequipBadge(profile.featuredBadges,id)
+      : equipBadge(profile.featuredBadges,profile.earnedBadges,id);
     const error = await saveFeaturedBadges(featuredBadges);
     if (error) {
       setMessage(error);
@@ -2355,19 +2362,20 @@ function Badges() {
       </header>
       {message && <div className="form-error page-error">{message}</div>}
       <div className="badge-summary"><strong>{profile.earnedBadges.length}</strong><span>of {badges.length} unlocked</span><Link to="/help/badges">Badge guide <ArrowUpRight/></Link></div>
+      <div className="badge-filters" aria-label="Badge categories">
+        {(["All","Profile","Security","Fun"] as const).map(item=><button type="button" className={category===item?'active':''} aria-pressed={category===item} onClick={()=>setCategory(item)} key={item}>{item}</button>)}
+      </div>
       <div className="badge-grid">
-        {[...badges].sort((a,b)=>{
-          const rank=(badge:typeof a)=>profile.featuredBadges.includes(badge.id)?0:profile.earnedBadges.includes(badge.id)?1:2;
-          return rank(a)-rank(b);
-        }).map((badge) => {
+        {badges.filter(badge=>category==='All'||badge.category===category).map((badge) => {
           const unlocked = profile.earnedBadges.includes(badge.id);
           const featured = profile.featuredBadges.includes(badge.id);
           return (
-            <article className={`badge-card ${featured ? "featured" : ""} ${unlocked?'unlocked':'locked'}`} key={badge.id}>
-              <span className="badge-icon"><Sparkles/></span>
-              <small>{badge.rarity}</small>
+            <article className={`badge-card badge-${badge.category.toLowerCase()} ${featured ? "featured" : ""} ${unlocked?'unlocked':'locked'}`} style={{'--badge-accent':badgeAccent(badge.category,unlocked)} as React.CSSProperties} key={badge.id}>
+              <span className="badge-icon"><BadgeArt id={badge.id}/></span>
+              <small>{badge.category}</small>
               <h3>{badge.name}</h3>
-              <p>{badge.description}</p>
+              <p>{badge.unlockCondition}</p>
+              <b>{unlocked?(featured?'EQUIPPED':'UNLOCKED'):'LOCKED'}</b>
               {unlocked?<button type="button" onClick={() => void toggle(badge.id, featured)}>{featured?'REMOVE FROM PROFILE':'FEATURE ON PROFILE'}</button>:<Link to={`/help/badges#${badge.id}`}>HOW TO GET <ArrowUpRight/></Link>}
             </article>
           );
@@ -2377,11 +2385,42 @@ function Badges() {
   );
 }
 
+function BadgeHelpContent(){
+  const [query,setQuery]=useState("");
+  const normalized=query.trim().toLowerCase();
+  const visible=normalized?badges.filter(badge=>`${badge.name} ${badge.category} ${badge.unlockCondition}`.toLowerCase().includes(normalized)):badges;
+  return <>
+    <section className="badge-help-intro">
+      <p>TAP badges are permanent achievements that document meaningful progress across your identity, security, and customization.</p>
+      <p>Badges unlock automatically when their real conditions are satisfied and verified by TAP.</p>
+      <p>Only unlocked badges can be equipped on your public profile.</p>
+      <p>Use the Badges page to equip or unequip any badge you already own.</p>
+      <p>Locked badges always remain gray, while unlocked badges use the color assigned to their category.</p>
+    </section>
+    <div className="badge-help-tools">
+      <label className="badge-help-search"><Search/><span className="sr-only">Search badges</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Search badges"/></label>
+      <nav aria-label="Badge categories"><a href="#profile-badges">Profile</a><a href="#security-badges">Security</a><a href="#fun-badges">Fun</a></nav>
+    </div>
+    <section className="badge-docs" aria-live="polite">
+      {visible.length===0?<div className="empty-state"><Search/><h2>No badges found</h2><p>Try a badge name, category, or unlock keyword.</p></div>:visible.map((badge,index)=>{
+        const previous=visible[index-1];
+        return <Fragment key={badge.id}>
+          {(!previous||previous.category!==badge.category)&&<h2 className="badge-category-heading" id={`${badge.category.toLowerCase()}-badges`}>{badge.category} badges</h2>}
+          <article id={badge.id} className={`badge-doc badge-${badge.category.toLowerCase()}`} style={{'--badge-accent':badgeAccent(badge.category,true)} as React.CSSProperties}>
+            <header><BadgeArt id={badge.id} size="help"/><div><small>BADGE {String(badge.sortOrder).padStart(2,'0')} · {badge.category}</small><h3>{badge.name}</h3><strong>{badge.unlockCondition}</strong></div></header>
+            <ol>{badge.help.map((sentence,sentenceIndex)=><li key={sentenceIndex}>{sentence}</li>)}</ol>
+          </article>
+        </Fragment>;
+      })}
+    </section>
+  </>;
+}
+
 function HelpPage({topic}:{topic:'badges'|'levels'|'profile'}){
   const location=useLocation();
   useEffect(()=>{if(location.hash)setTimeout(()=>document.getElementById(location.hash.slice(1))?.scrollIntoView({behavior:'smooth',block:'center'}),50)},[location.hash]);
   const levelRows=Array.from({length:20},(_,i)=>({level:i+1,xp:i*i*100,next:(i+1)*(i+1)*100}));
-  return <main className="help-page"><header><Logo/><nav><Link to="/help/badges">Badges</Link><Link to="/help/levels">Levels</Link><Link to="/help/profile">Profile</Link><Link to="/app">Open TAP</Link></nav></header><section className="help-hero"><span className="eyebrow">TAP HELP CENTER</span><h1>{topic==='badges'?'Badges and achievements':topic==='levels'?'Levels and XP':'Your TAP profile'}</h1><p>{topic==='badges'?'Learn exactly how every badge is earned and which badges can be featured.':topic==='levels'?'Understand XP, levels, progress, and verified milestones.':'Learn how visibility, cards, connections, avatars, and sharing work.'}</p></section>{topic==='badges'?<section className="help-list">{badges.map(badge=><article id={badge.id} key={badge.id}><span className="badge-icon"><Sparkles/></span><div><small>{badge.rarity}</small><h2>{badge.name}</h2><p>{badge.description}</p><strong>How to get it</strong><p>{badge.howTo}</p></div></article>)}</section>:topic==='levels'?<section className="help-list level-help"><article id="xp"><div><h2>How XP works</h2><p><strong>XP</strong> records meaningful progress in TAP. Verified provider milestones are calculated server-side, so manually typed statistics never count as verified XP.</p></div></article>{levelRows.map(row=><article id={`level-${row.level}`} key={row.level}><div><small>LEVEL {row.level}</small><h2>{row.xp.toLocaleString()} XP</h2><p>Reach this level at {row.xp.toLocaleString()} total XP. The next level begins at {row.next.toLocaleString()} XP.</p></div></article>)}</section>:<section className="help-list"><article id="visibility"><div><h2>Public and private profiles</h2><p>A public profile can be opened by its TAP URL. A private profile is visible only to its owner.</p></div></article><article id="cards"><div><h2>Cards and connection order</h2><p>Cards let you choose which connections appear. Hidden connections stay private and remember their saved priority.</p></div></article><article id="avatars"><div><h2>Avatar Studio</h2><p>Choose a photo, built-in TAP identity, or customizable icon. Your selection is saved to your account.</p></div></article><article id="verified"><div><h2>Verified stats</h2><p>Verified metrics come only from an explicitly authorized official provider API. They do not mean human identity verification.</p></div></article></section>}</main>
+  return <main className={`help-page help-${topic}`}><header><Logo/><nav><Link to="/help/badges">Badges</Link><Link to="/help/levels">Levels</Link><Link to="/help/profile">Profile</Link><Link to="/app">Open TAP</Link></nav></header><section className="help-hero"><span className="eyebrow">TAP HELP CENTER</span><h1>{topic==='badges'?'Badges':topic==='levels'?'Levels and XP':'Your TAP profile'}</h1>{topic!=='badges'&&<p>{topic==='levels'?'Understand XP, levels, progress, and verified milestones.':'Learn how visibility, cards, connections, avatars, and sharing work.'}</p>}</section>{topic==='badges'?<BadgeHelpContent/>:topic==='levels'?<section className="help-list level-help"><article id="xp"><div><h2>How XP works</h2><p><strong>XP</strong> records meaningful progress in TAP. Verified provider milestones are calculated server-side, so manually typed statistics never count as verified XP.</p></div></article>{levelRows.map(row=><article id={`level-${row.level}`} key={row.level}><div><small>LEVEL {row.level}</small><h2>{row.xp.toLocaleString()} XP</h2><p>Reach this level at {row.xp.toLocaleString()} total XP. The next level begins at {row.next.toLocaleString()} XP.</p></div></article>)}</section>:<section className="help-list"><article id="visibility"><div><h2>Public and private profiles</h2><p>A public profile can be opened by its TAP URL. A private profile is visible only to its owner.</p></div></article><article id="cards"><div><h2>Cards and connection order</h2><p>Cards let you choose which connections appear. Hidden connections stay private and remember their saved priority.</p></div></article><article id="avatars"><div><h2>Avatar Studio</h2><p>Choose a photo, built-in TAP identity, or customizable icon. Your selection is saved to your account.</p></div></article><article id="verified"><div><h2>Verified stats</h2><p>Verified metrics come only from an explicitly authorized official provider API. They do not mean human identity verification.</p></div></article></section>}</main>
 }
 
 function SettingsPage() {
@@ -2639,6 +2678,11 @@ function PublicProfile() {
   );
 }
 
+function ShortProfileRedirect(){
+  const {username=""}=useParams();
+  return <Navigate to={`/u/${encodeURIComponent(username.toLowerCase())}`} replace/>;
+}
+
 function RouteLoading({ label = "Loading your TAP…" }: { label?: string }) {
   return (
     <main className="route-loading">
@@ -2760,6 +2804,7 @@ export default function App() {
         <Route path="/help/badges" element={<HelpPage topic="badges" />} />
         <Route path="/help/levels" element={<HelpPage topic="levels" />} />
         <Route path="/help/profile" element={<HelpPage topic="profile" />} />
+        <Route path="/:username" element={<ShortProfileRedirect/>}/>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </StoreContext>

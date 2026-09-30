@@ -30,8 +30,8 @@ export const demoProfile: Profile = {
   visibility: "public",
   xp: 12100,
   taps: 1284,
-  featuredBadges: ["first-tap", "dev", "og"],
-  earnedBadges: ["first-tap", "connected", "social", "creator", "dev", "100-taps", "1k", "og"],
+  featuredBadges: ["launch-spark", "source-flame", "profile-apex"],
+  earnedBadges: ["launch-spark", "first-imprint", "profile-signature", "first-connection", "connected-core", "source-flame", "profile-charge", "profile-apex"],
   onboardingComplete: true,
 };
 export const demoConnections: Connection[] = [
@@ -186,19 +186,3 @@ export const demoCards: TapCard[] = [
     visible: true,
   },
 ];
-export type BadgeDefinition={id:string;name:string;description:string;rarity:'COMMON'|'UNCOMMON'|'RARE'|'EPIC'|'LEGENDARY'|'SECRET';howTo:string;icon:string}
-const coreBadges:BadgeDefinition[]=[
-  {id:'first-tap',name:'FIRST TAP',description:'Share your profile for the first time.',rarity:'COMMON',howTo:'Share your public TAP profile once.',icon:'share'},
-  {id:'connected',name:'CONNECTED',description:'Connect your first supported account.',rarity:'COMMON',howTo:'Add any connection to your TAP.',icon:'link'},
-  {id:'social',name:'SOCIAL',description:'Build a social presence across multiple networks.',rarity:'RARE',howTo:'Add at least three social connections.',icon:'users'},
-  {id:'creator',name:'CREATOR',description:'Add a creator or media profile.',rarity:'RARE',howTo:'Connect a creator platform such as YouTube or Twitch.',icon:'sparkles'},
-  {id:'dev',name:'DEV',description:'Connect a developer identity.',rarity:'EPIC',howTo:'Add GitHub, GitLab, Codeberg, or another developer profile.',icon:'code'},
-  {id:'100-taps',name:'100 TAPS',description:'Your profile reached 100 opens.',rarity:'RARE',howTo:'Receive 100 verified profile opens.',icon:'eye'},
-  {id:'1k',name:'1K CLUB',description:'Your profile reached 1,000 opens.',rarity:'LEGENDARY',howTo:'Receive 1,000 verified profile opens.',icon:'crown'},
-  {id:'og',name:'OG',description:'One of TAP’s early identities.',rarity:'SECRET',howTo:'Reserved for early TAP members.',icon:'star'},
-]
-const badgeFamilies=[
-  ['identity','IDENTITY','Complete and refine your TAP identity'],['network','NETWORK','Grow your connected app network'],['explorer','EXPLORER','Discover more of TAP'],['collector','COLLECTOR','Collect and feature badges'],['socialist','SOCIAL','Connect social platforms'],['gamer','GAMER','Connect gaming identities'],['builder','BUILDER','Connect development tools'],['artist','CREATOR','Connect creative platforms'],['popular','POPULAR','Reach more profile visitors'],['veteran','VETERAN','Keep your TAP active'],
-] as const
-const generatedBadges:BadgeDefinition[]=Array.from({length:92},(_,index)=>{const family=badgeFamilies[index%badgeFamilies.length];const tier=Math.floor(index/badgeFamilies.length)+1;const rarities:BadgeDefinition['rarity'][]=['COMMON','UNCOMMON','RARE','EPIC','LEGENDARY'];return{id:`${family[0]}-${String(tier).padStart(2,'0')}`,name:`${family[1]} ${tier}`,description:`${family[2]} — milestone ${tier}.`,rarity:rarities[Math.min(4,Math.floor(index/20))],howTo:`Progress through ${family[1].toLowerCase()} activities in TAP to unlock milestone ${tier}.`,icon:family[0]}})
-export const badges:BadgeDefinition[]=[...coreBadges,...generatedBadges]

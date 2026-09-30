@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { avatarInitials, canShowOnCard, detectProviderFromUrl, hasValidDestination, isDemoUsername, isHexColor, isProfileComplete, levelFromXp, normalizeProviderUrl, parseProviderInput, publicSearchHref, safeUrlSchema, tapHomeRoute, usernameSchema } from './core'
-import { badges, demoConnections, demoProfile, emptyProfile } from '../data/demo'
+import { demoConnections, demoProfile, emptyProfile } from '../data/demo'
+import { badgeAccent, badgeCategoryColors, badges, canEquipBadge, equipBadge, lockedBadgeColor, unequipBadge } from '../data/badges'
 import { filterProviders, mainProviderIds, providers } from './providers'
 import { canRefreshAt, cooldownLabel, earnedMilestones, revealDelay, shouldAnimateReveal, snapshotRows, verifiedXpSummary } from './verifiedStats'
 import {avatarIconIds,normalizeAvatarIcon,normalizeAvatarMode,normalizePresetAvatar,presetAvatarIds,validAvatarColor} from './avatars'
@@ -31,7 +34,12 @@ describe('critical profile logic',()=>{
   it('normalizes and persists all three avatar modes safely',()=>{expect(normalizeAvatarMode('custom')).toBe('photo');expect(normalizeAvatarMode('icon')).toBe('icon');expect(normalizeAvatarMode('broken')).toBe('preset')})
   it('looks up preset and icon avatars with safe fallbacks',()=>{expect(presetAvatarIds).toHaveLength(5);expect(avatarIconIds).toHaveLength(5);expect(normalizePresetAvatar('robot')).toBe('robot');expect(normalizePresetAvatar('missing')).toBe('cosmic');expect(normalizeAvatarIcon('code')).toBe('code');expect(normalizeAvatarIcon('missing')).toBe('orbit')})
   it('validates icon avatar colors',()=>{expect(validAvatarColor('#12ABef')).toBe(true);expect(validAvatarColor('#fff')).toBe(false);expect(validAvatarColor('red')).toBe(false)})
-  it('ships a unique professional badge catalog',()=>{expect(badges).toHaveLength(100);expect(new Set(badges.map(badge=>badge.id)).size).toBe(100);expect(badges.every(badge=>badge.howTo&&badge.name&&badge.description)).toBe(true)})
+  it('ships exactly 100 semantic badges with unique ids and names',()=>{expect(badges).toHaveLength(100);expect(new Set(badges.map(badge=>badge.id)).size).toBe(100);expect(new Set(badges.map(badge=>badge.name)).size).toBe(100);expect(badges.every(badge=>/^[a-z]+(?:-[a-z]+)*$/.test(badge.id)&&!/^badge-?\d+$/i.test(badge.id))).toBe(true)})
+  it('keeps the canonical badge order and valid category counts',()=>{expect(badges.map(badge=>badge.sortOrder)).toEqual(Array.from({length:100},(_,index)=>index+1));expect(badges.filter(badge=>badge.category==='Profile')).toHaveLength(50);expect(badges.filter(badge=>badge.category==='Security')).toHaveLength(30);expect(badges.filter(badge=>badge.category==='Fun')).toHaveLength(20)})
+  it('gives every badge a unique local icon and unlock condition',()=>{expect(new Set(badges.map(badge=>badge.icon)).size).toBe(100);expect(badges.every(badge=>badge.unlockCondition.length>20&&existsSync(join(process.cwd(),'public',badge.icon.replace(/^\//,''))))).toBe(true)})
+  it('provides exactly ten documentation sentences for every badge',()=>{expect(badges.every(badge=>badge.help.length===10&&badge.help.every(sentence=>/[.!?]$/.test(sentence)))).toBe(true)})
+  it('uses gray for every locked badge and category colors only when unlocked',()=>{for(const badge of badges)expect(badgeAccent(badge.category,false)).toBe(lockedBadgeColor);expect(badgeAccent('Profile',true)).toBe(badgeCategoryColors.Profile);expect(badgeAccent('Security',true)).toBe(badgeCategoryColors.Security);expect(badgeAccent('Fun',true)).toBe(badgeCategoryColors.Fun)})
+  it('prevents locked equips and preserves ownership when unequipping',()=>{expect(canEquipBadge([],badges[0].id)).toBe(false);expect(equipBadge([],[],badges[0].id)).toEqual([]);expect(equipBadge([],[badges[0].id],badges[0].id)).toEqual([badges[0].id]);expect(unequipBadge([badges[0].id],badges[0].id)).toEqual([]);expect([badges[0].id]).toContain(badges[0].id)})
   it('moves visible card connections and keeps hidden rows at the bottom',()=>{const card={id:'c',slug:'main',name:'MAIN',type:'main' as const,visible:true,connectionIds:['github','discord','youtube'],hiddenConnectionIds:['discord']};expect(moveCardConnection(card,'youtube',-1).connectionIds).toEqual(['youtube','discord','github']);expect(orderedCardConnections(card,demoConnections).slice(-1)[0].id).not.toBe('github')})
   it('restores a hidden card connection at its saved priority',()=>{const card={id:'c',slug:'main',name:'MAIN',type:'main' as const,visible:true,connectionIds:['github','discord'],hiddenConnectionIds:['github']};const restored=toggleCardConnection(card,'github');expect(restored.connectionIds).toEqual(['github','discord']);expect(restored.hiddenConnectionIds).toEqual([])})
 })
