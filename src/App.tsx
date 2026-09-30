@@ -2215,6 +2215,9 @@ function Connections() {
 
 function Cards() {
   const { profile, cards, setCards, connections } = useTap();
+  const navigate = useNavigate();
+  const [previewing, setPreviewing] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState("");
   const updateCard = (updated: TapCard) =>
     setCards(cards.map((card) => (card.id === updated.id ? updated : card)));
   return (
@@ -2236,7 +2239,7 @@ function Cards() {
                   name: "NEW CARD",
                   type: "social",
                   visible: true,
-                  connectionIds: [],
+                  connectionIds: connections.filter((item) => item.visible).map((item) => item.id),
                   hiddenConnectionIds: [],
                 },
               ])
@@ -2325,13 +2328,29 @@ function Cards() {
                   </div>
                 );
               })}
-              <Link to={`/u/${profile.username}?card=${card.slug}`}>
-                Preview link <ArrowUpRight size={15} />
-              </Link>
+              <button
+                className="card-preview-link"
+                type="button"
+                disabled={previewing === card.id}
+                onClick={async () => {
+                  setPreviewError("");
+                  setPreviewing(card.id);
+                  const error = await saveCards(cards);
+                  setPreviewing(null);
+                  if (error) {
+                    setPreviewError(error);
+                    return;
+                  }
+                  navigate(`/u/${profile.username}?card=${encodeURIComponent(card.slug)}`);
+                }}
+              >
+                {previewing === card.id ? "Saving…" : "Preview link"} <ArrowUpRight size={15} />
+              </button>
             </article>
           ))}
         </div>
       )}
+      {previewError && <p className="form-error card-preview-error">{previewError}</p>}
     </AppShell>
   );
 }
@@ -2565,11 +2584,19 @@ function PublicProfile() {
     profile: Profile;
     connections: Connection[];
     card: TapCard;
+    availableCards: Pick<TapCard, "slug" | "name" | "type">[];
   } | null>(null);
+  const [switchingCard, setSwitchingCard] = useState(false);
+  const hasPublicData = useRef(false);
+  const navigate = useNavigate();
   useEffect(() => {
     let active = true;
     if (!isSupabaseConfigured || isDemoUsername(username)) return;
-    Promise.resolve().then(() => active && setState("loading"));
+    Promise.resolve().then(() => {
+      if (!active) return;
+      if (hasPublicData.current) setSwitchingCard(true);
+      else setState("loading");
+    });
     getPublicProfile(username, cardSlug)
       .then((result) => {
         if (!active) return;
@@ -2579,14 +2606,24 @@ function PublicProfile() {
           result.profile &&
           result.connections &&
           result.card
-        )
+        ) {
           setPublicData({
             profile: result.profile,
             connections: result.connections,
             card: result.card,
+            availableCards: result.availableCards?.length
+              ? result.availableCards
+              : [{ slug: result.card.slug, name: result.card.name, type: result.card.type }],
           });
+          hasPublicData.current = true;
+        }
+        setSwitchingCard(false);
       })
-      .catch(() => active && setState("error"));
+      .catch(() => {
+        if (!active) return;
+        setSwitchingCard(false);
+        setState("error");
+      });
     return () => {
       active = false;
     };
@@ -2643,6 +2680,7 @@ function PublicProfile() {
     profile: store.profile,
     connections: store.connections,
     card: store.cards.find((c) => c.slug === cardSlug) || store.cards[0],
+    availableCards: store.cards.filter((card) => card.visible),
   };
   if (!data.card) return null;
   return (
@@ -2660,17 +2698,37 @@ function PublicProfile() {
           <ShareButton />
         </div>
         <div className="public-wrap">
-          <ProfileCard card={data.card} />
+          <div className={`public-card-stage ${switchingCard ? "is-switching" : ""}`} key={data.card.slug}>
+            <ProfileCard card={data.card} />
+          </div>
           <div className="public-meta">
             <div>
               <strong>{data.profile.taps.toLocaleString()}</strong>
               <span>TAPS</span>
             </div>
-            <div>
-              <strong>{data.card.name}</strong>
-              <span>ACTIVE CARD</span>
-            </div>
           </div>
+          {data.availableCards.length > 0 && (
+            <nav className="public-card-switcher" aria-label="Profile cards">
+              {data.availableCards.map((card) => {
+                const active = card.slug === data.card.slug;
+                return (
+                  <button
+                    className={active ? "active" : ""}
+                    type="button"
+                    key={card.slug}
+                    aria-current={active ? "page" : undefined}
+                    disabled={active || switchingCard}
+                    onClick={() =>
+                      navigate(`/u/${encodeURIComponent(data.profile.username)}?card=${encodeURIComponent(card.slug)}`)
+                    }
+                  >
+                    <strong>{card.name}</strong>
+                    <span>{active ? "ACTIVE CARD" : "OPEN CARD"}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          )}
           <p className="tap-signoff">Made with TAP · create your identity</p>
         </div>
       </main>

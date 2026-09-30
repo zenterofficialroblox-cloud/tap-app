@@ -39,6 +39,7 @@ export type PublicProfileResult = {
   profile?: Profile;
   connections?: Connection[];
   card?: TapCard;
+  availableCards?: Pick<TapCard, "slug" | "name" | "type">[];
 };
 
 const messageFor = (
@@ -564,7 +565,14 @@ export async function getPublicProfile(
         hiddenConnectionIds: [],
       }
     : undefined;
-  return { status, profile, connections, card };
+  const availableCards = (
+    (raw.available_cards as Record<string, unknown>[]) || []
+  ).map((item) => ({
+    slug: String(item.slug),
+    name: String(item.name),
+    type: String(item.type || "main") as TapCard["type"],
+  }));
+  return { status, profile, connections, card, availableCards };
 }
 export async function searchProfiles(
   query: string,
