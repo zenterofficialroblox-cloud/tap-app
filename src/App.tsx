@@ -479,16 +479,13 @@ function BadgeArt({id,size="card"}:{id:string;size?:"tiny"|"card"|"help"}){
   return <img className={`badge-art badge-art-${size}`} src={badge.icon} alt="" loading="lazy" decoding="async" aria-hidden="true"/>;
 }
 const baseThemeIds = ["default", "neon", "galaxy", "pixel", "frost"] as const;
-const themeRows: Record<string, number> = {default:0,neon:1,galaxy:2,pixel:3,frost:4,sunset:1,ocean:1,forest:1,rose:1,lavender:1,cyber:2,matrix:2,ruby:2,sapphire:2,amber:2,mint:3,cotton:3,bubble:3,lime:3,peach:3,midnight:4,aurora:4,volcano:4,meadow:4,sand:4};
-const themeColumns: Record<string, number> = {default:0,neon:1,galaxy:2,pixel:3,frost:4,sunset:0,ocean:1,forest:2,rose:3,lavender:4,cyber:0,matrix:1,ruby:2,sapphire:3,amber:4,mint:0,cotton:1,bubble:2,lime:3,peach:4,midnight:0,aurora:1,volcano:2,meadow:3,sand:4};
 function themeWallpaperStyle(themeId:string, variant=0){
   const isBase=(baseThemeIds as readonly string[]).includes(themeId);
-  const column=isBase?Math.min(5,Math.max(0,variant)):themeColumns[themeId]??0;
-  const row=isBase?themeRows[themeId]??0:themeRows[themeId]??0;
+  const selectedVariant=Math.min(5,Math.max(0,variant));
   return {
-    "--theme-wallpaper":`url(${isBase?'/themes/base-variants.png':'/themes/theme-wallpapers.png'})`,
-    "--theme-size":isBase?'600% 500%':'500% 500%',
-    "--theme-position":`${column*(isBase?20:25)}% ${row*25}%`,
+    "--theme-wallpaper":`url(/themes/variants/${isBase?`${themeId}-${selectedVariant}`:themeId}.png)`,
+    "--theme-size":'cover',
+    "--theme-position":'center',
   } as React.CSSProperties;
 }
 function ProfileCard({

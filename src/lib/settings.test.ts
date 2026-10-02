@@ -13,8 +13,7 @@ describe("settings architecture", () => {
   it("uses all five supplied TAP themes", () => {
     for (const theme of ["default", "neon", "galaxy", "pixel", "frost"])
       expect(appSource).toContain(`["${theme}",`);
-    expect(appSource).toContain("/themes/base-variants.png");
-    expect(appSource).toContain("/themes/theme-wallpapers.png");
+    expect(appSource).toContain("/themes/variants/");
   });
 
   it("provides debounced, immediate, deduplicated and failure-aware autosave", () => {
