@@ -1,6 +1,7 @@
 import {
   Fragment,
   useEffect,
+  useCallback,
   useRef,
   useState,
   type Dispatch,
@@ -21,26 +22,33 @@ import {
 import {
   ArrowUpRight,
   BadgeCheck,
+  Bell,
   Check,
   ChevronRight,
   Copy,
+  Database,
   Eye,
   EyeOff,
+  ChevronLeft,
   Globe2,
   LayoutGrid,
   Link2,
   Lock,
+  Mail,
   LogOut,
   Menu,
   Palette,
   QrCode,
   Search,
   Settings,
+  SlidersHorizontal,
   Share2,
   ShieldCheck,
   Sparkles,
   UserRound,
   UsersRound,
+  Trash2,
+  Monitor,
   Gamepad2,
   Code2,
   Play,
@@ -206,6 +214,12 @@ const StoreContext = ({ children }: { children: ReactNode }) => {
     isSupabaseConfigured ? [] : demoCards,
   );
   const hydrated = useRef(false);
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "reduce-motion",
+      localStorage.getItem("tap-reduced-motion") === "true",
+    );
+  }, []);
   const hydrate = async () => {
     if (!isSupabaseConfigured) return;
     setReady(false);
@@ -745,10 +759,10 @@ function AccentPicker({
 }
 const themes = [
   ["default", "Default", "Clean violet depth"],
-  ["neon", "Neon", "Electric cyan edge"],
-  ["galaxy", "Galaxy", "Deep cosmic gradient"],
-  ["pixel", "Pixel", "Crisp retro blocks"],
-  ["frost", "Frost", "Cool glass surface"],
+  ["neon", "Neon", "Bright & vibrant"],
+  ["galaxy", "Galaxy", "Cosmic gradients"],
+  ["pixel", "Pixel", "Retro & playful"],
+  ["frost", "Frost", "Cool & minimal"],
 ] as const;
 function ThemePicker({
   value,
@@ -769,7 +783,7 @@ function ThemePicker({
             aria-pressed={value === id}
             key={id}
           >
-            <i className={`theme-preview ${id}`}>
+            <i className={`theme-preview ${id}`} style={{backgroundImage:`url(/themes/${id}.webp)`}}>
               <b />
               <span />
               <em />
@@ -1898,6 +1912,9 @@ function EditProfile() {
   );
 }
 
+// Kept temporarily for migration safety; /edit now redirects to the autosaving settings editor.
+void EditProfile;
+
 function Connections() {
   const { connections, setConnections, cards, setCards } = useTap();
   const [editing, setEditing] = useState<ProviderId | null>(null);
@@ -2450,133 +2467,146 @@ function HelpPage({topic}:{topic:'badges'|'levels'|'profile'}){
   return <main className={`help-page help-${topic}`}><header><Logo/><nav><Link to="/help/badges">Badges</Link><Link to="/help/levels">Levels</Link><Link to="/help/profile">Profile</Link><Link to="/app">Open TAP</Link></nav></header><section className="help-hero"><span className="eyebrow">TAP HELP CENTER</span><h1>{topic==='badges'?'Badges':topic==='levels'?'Levels and XP':'Your TAP profile'}</h1>{topic!=='badges'&&<p>{topic==='levels'?'Understand XP, levels, progress, and verified milestones.':'Learn how visibility, cards, connections, avatars, and sharing work.'}</p>}</section>{topic==='badges'?<BadgeHelpContent/>:topic==='levels'?<section className="help-list level-help"><article id="xp"><div><h2>How XP works</h2><p><strong>XP</strong> records meaningful progress in TAP. Verified provider milestones are calculated server-side, so manually typed statistics never count as verified XP.</p></div></article>{levelRows.map(row=><article id={`level-${row.level}`} key={row.level}><div><small>LEVEL {row.level}</small><h2>{row.xp.toLocaleString()} XP</h2><p>Reach this level at {row.xp.toLocaleString()} total XP. The next level begins at {row.next.toLocaleString()} XP.</p></div></article>)}</section>:<section className="help-list"><article id="visibility"><div><h2>Public and private profiles</h2><p>A public profile can be opened by its TAP URL. A private profile is visible only to its owner.</p></div></article><article id="cards"><div><h2>Cards and connection order</h2><p>Cards let you choose which connections appear. Hidden connections stay private and remember their saved priority.</p></div></article><article id="avatars"><div><h2>Avatar Studio</h2><p>Choose a photo, built-in TAP identity, or customizable icon. Your selection is saved to your account.</p></div></article><article id="verified"><div><h2>Verified stats</h2><p>Verified metrics come only from an explicitly authorized official provider API. They do not mean human identity verification.</p></div></article></section>}</main>
 }
 
-function SettingsPage() {
-  const { profile, setProfile, realMode } = useTap();
-  const nav = useNavigate();
-  const [message, setMessage] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const logout = async () => {
-    await supabase?.auth.signOut();
-    nav("/login", { replace: true });
-  };
-  const privacy = async (visibility: Profile["visibility"]) => {
-    const next = { ...profile, visibility };
-    setProfile(next);
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+function AutosaveStatus({ state }: { state: SaveState }) {
+  if (state === "idle") return null;
+  return <span className={`autosave-state ${state}`} role="status">{state === "saving" ? "Saving…" : state === "saved" ? "Saved" : "Couldn’t save"}</span>;
+}
+
+function useProfileAutosave(initial: Profile, apply: (profile: Profile) => void) {
+  const [draft, setDraft] = useState(initial);
+  const [state, setState] = useState<SaveState>("idle");
+  const lastSaved = useRef(JSON.stringify(initial));
+  const pending = useRef("");
+  const version = useRef(0);
+  const savedTimer = useRef<number | undefined>(undefined);
+  const persist = useCallback(async (next: Profile, rollback?: Profile) => {
+    const serialized = JSON.stringify(next);
+    if (serialized === lastSaved.current || serialized === pending.current) return true;
+    const request = ++version.current;
+    pending.current = serialized;
+    setState("saving");
     const result = await saveCurrentProfile(next);
+    if (request !== version.current) return !result.error;
+    pending.current = "";
     if (result.error) {
-      setProfile(profile);
-      setMessage(result.error);
-    } else setMessage("Privacy saved.");
-  };
-  const removeAccount = async () => {
-    if (
-      !confirm(
-        "Permanently delete your TAP account and all of its data? This cannot be undone.",
-      )
-    )
-      return;
-    setDeleting(true);
-    const error = await deleteAccount();
-    setDeleting(false);
-    if (error) {
-      setMessage(error);
-      return;
+      setState("error");
+      if (rollback) setDraft(rollback);
+      return false;
     }
-    await supabase?.auth.signOut();
-    nav("/", { replace: true });
+    lastSaved.current = serialized;
+    apply(next);
+    setState("saved");
+    window.clearTimeout(savedTimer.current);
+    savedTimer.current = window.setTimeout(() => setState("idle"), 1600);
+    return true;
+  }, [apply]);
+  useEffect(() => {
+    const serialized = JSON.stringify(draft);
+    if (serialized === lastSaved.current || serialized === pending.current) return;
+    const timer = window.setTimeout(() => void persist(draft), 650);
+    return () => window.clearTimeout(timer);
+  }, [draft, persist]);
+  const immediate = useCallback((next: Profile) => {
+    const previous = draft;
+    setDraft(next);
+    void persist(next, previous);
+  }, [draft, persist]);
+  return { draft, setDraft, immediate, state, persist };
+}
+
+function useAccountIdentity() {
+  const [identity, setIdentity] = useState<{ email: string; verified: boolean }>({ email: "", verified: false });
+  useEffect(() => {
+    let active = true;
+    void supabase?.auth.getUser().then(({ data }) => {
+      if (!active || !data.user) return;
+      setIdentity({ email: data.user.email || "", verified: Boolean(data.user.email_confirmed_at) });
+    });
+    return () => { active = false; };
+  }, []);
+  return identity;
+}
+
+function SettingsHeader({ title, subtitle, state, root = false }: { title: string; subtitle: string; state?: SaveState; root?: boolean }) {
+  return <header className="settings-page-head"><div><span className="eyebrow">SETTINGS</span><h1>{title}</h1><p>{subtitle}</p></div><div className="settings-head-actions">{state && <AutosaveStatus state={state}/>} {!root && <Link className="btn btn-secondary" to="/settings"><ChevronLeft/> Back to settings</Link>}</div></header>;
+}
+
+const settingsLinks = [
+  ["account", UserRound, "Account", "Manage your email and basic account information."],
+  ["profile", Palette, "Profile & Appearance", "Customize your identity, avatar, and visual style."],
+  ["privacy", Lock, "Privacy", "Control who can find and view your profile."],
+  ["security", ShieldCheck, "Security", "Protect your account and verified connections."],
+  ["notifications", Bell, "Notifications", "Choose what you want to be notified about."],
+  ["connections", Link2, "Connected Accounts", "Manage social accounts and integrations."],
+  ["badges", Sparkles, "Badge Display", "Choose which earned badges appear publicly."],
+  ["preferences", SlidersHorizontal, "App Preferences", "Customize motion and interface behavior."],
+  ["data", Database, "Data & Storage", "Understand storage or delete your account."],
+] as const;
+
+function SettingsSummary() {
+  const { profile } = useTap();
+  const identity = useAccountIdentity();
+  const currentTheme = themes.find(([id]) => id === profile.themeId) || themes[0];
+  return <div className="settings-summary"><div className="settings-summary-top"><Avatar profile={profile} large/><div><h2>{profile.displayName}</h2><span>@{profile.username}</span>{identity.verified && <small><i/> Verified email</small>}</div><b>✦ LEVEL {levelFromXp(profile.xp).level}</b></div><div className="summary-line"><span>THEME</span><strong>{currentTheme[1]}</strong></div><div className="summary-line"><span>ACCENT COLOR</span><i style={{background:profile.accentColor}}/><strong>{profile.accentColor}</strong></div><Link className="summary-preview" to={`/u/${profile.username}`}><Eye/> <span><strong>Preview your profile</strong><small>See how your profile looks to others.</small></span><ArrowUpRight/></Link></div>;
+}
+
+function SettingsPage() {
+  return <AppShell><SettingsHeader root title="Settings" subtitle="Manage your account, privacy, appearance, and app preferences."/><div className="settings-home-layout"><nav className="settings-nav-grid">{settingsLinks.map(([path,Icon,title,description])=><Link className={`settings-nav-card settings-${path}`} to={`/settings/${path}`} key={path}><span><Icon/></span><div><h2>{title}</h2><p>{description}</p></div><ChevronRight/></Link>)}</nav><SettingsSummary/></div></AppShell>;
+}
+
+function ProfileSettingsPage() {
+  const store = useTap();
+  const auto = useProfileAutosave(store.profile, store.setProfile);
+  const {draft,setDraft,immediate,state}=auto;
+  const [username, setUsername] = useState(auto.draft.username);
+  const [usernameState, setUsernameState] = useState<"available"|"unavailable"|"checking"|"invalid">("available");
+  useEffect(() => {
+    const value = username.toLowerCase().trim();
+    if (value === draft.username) { const t=window.setTimeout(()=>setUsernameState("available"),0); return()=>window.clearTimeout(t); }
+    const parsed = usernameSchema.safeParse(value);
+    if (!parsed.success) { const t=window.setTimeout(()=>setUsernameState("invalid"),0); return()=>window.clearTimeout(t); }
+    const timer = window.setTimeout(() => void checkUsername(value).then((available) => {
+      setUsernameState(available ? "available" : "unavailable");
+      if (available) setUsername(value);
+      if (available) setDraft((current) => ({...current, username:value}));
+    }).catch(()=>setUsernameState("unavailable")), 450);
+    return () => window.clearTimeout(timer);
+  }, [username, draft.username, setDraft]);
+  const chooseAvatar = async (file?: File) => {
+    if (!file) return;
+    try { const avatarUrl = await uploadAvatar(file); immediate({...draft, avatarUrl, avatarMode:"photo"}); }
+    catch { /* upload validation is surfaced by autosave status below */ }
   };
-  return (
-    <AppShell>
-      <header className="page-head">
-        <div>
-          <span className="eyebrow">SETTINGS</span>
-          <h1>Control your TAP.</h1>
-        </div>
-      </header>
-      {message && (
-        <div className="connection-message" role="status">
-          {message}
-        </div>
-      )}
-      <div className="settings-stack">
-        <section className="panel">
-          <h2>Privacy</h2>
-          <label className="setting-row">
-            <span>
-              <b>Public profile</b>
-              <small>Anyone with your link can view it.</small>
-            </span>
-            <input
-              type="checkbox"
-              checked={profile.visibility === "public"}
-              onChange={(e) =>
-                void privacy(e.target.checked ? "public" : "private")
-              }
-            />
-          </label>
-          <label className="setting-row">
-            <span>
-              <b>Appear in profile search</b>
-              <small>
-                Private profiles show only your name, username and avatar.
-              </small>
-            </span>
-            <input
-              type="checkbox"
-              checked={profile.discoverable}
-              onChange={async (e) => {
-                const next = { ...profile, discoverable: e.target.checked };
-                setProfile(next);
-                const result = await saveCurrentProfile(next);
-                setMessage(result.error || "Discovery saved.");
-              }}
-            />
-          </label>
-        </section>
-        <section className="panel">
-          <h2>Appearance</h2>
-          <label className="setting-row">
-            <span>
-              <b>Reduced motion</b>
-              <small>Also follows your operating system setting.</small>
-            </span>
-            <input
-              type="checkbox"
-              onChange={(e) =>
-                document.documentElement.classList.toggle(
-                  "reduce-motion",
-                  e.target.checked,
-                )
-              }
-            />
-          </label>
-        </section>
-        <section className="panel">
-          <h2>Account</h2>
-          <Link className="btn btn-secondary" to="/forgot-password">
-            CHANGE PASSWORD
-          </Link>
-          <Button tone="secondary" onClick={logout}>
-            <LogOut /> LOG OUT
-          </Button>
-        </section>
-        <section className="panel danger">
-          <h2>Danger zone</h2>
-          <p>
-            Permanently delete your profile, connections, cards, badges and
-            avatar.
-          </p>
-          <Button
-            tone="secondary"
-            disabled={!realMode || deleting}
-            onClick={() => void removeAccount()}
-          >
-            {deleting ? "DELETING…" : "DELETE ACCOUNT"}
-          </Button>
-        </section>
-      </div>
-    </AppShell>
-  );
+  return <AppShell><SettingsHeader title="Profile & Appearance" subtitle="Customize how your identity looks across TAP." state={state}/><div className="profile-settings-layout"><div className="profile-settings-sections"><section className="settings-panel"><header><UserRound/><div><h2>Basic information</h2><p>This information is visible on your public profile.</p></div></header><div className="settings-fields"><label>Display name<div><input maxLength={40} value={draft.displayName} onChange={e=>setDraft({...draft,displayName:e.target.value})}/><small>{draft.displayName.length}/40</small></div></label><label>Username<div className="username-field"><span>@</span><input maxLength={24} value={username} onChange={e=>{const value=e.target.value.toLowerCase().replace(/[^a-z0-9_]/g,"");setUsername(value);setUsernameState(usernameSchema.safeParse(value).success?"checking":"invalid");}}/><small className={usernameState}>{usernameState === "checking" ? "Checking…" : usernameState[0].toUpperCase()+usernameState.slice(1)}</small></div></label><label>Bio<div><textarea maxLength={1000} value={draft.bio} onChange={e=>setDraft({...draft,bio:e.target.value})}/><small>{draft.bio.length}/1000</small></div></label></div></section><section className="settings-panel"><header><UserRound/><div><h2>Avatar</h2><p>Choose how your avatar appears across TAP.</p></div></header><AvatarPicker profile={draft} onChange={immediate} onUpload={file=>void chooseAvatar(file)}/></section><section className="settings-panel"><header><Palette/><div><h2>Accent color</h2><p>Used across your profile, cards, and interface elements.</p></div></header><AccentPicker value={draft.accentColor} onChange={accentColor=>immediate({...draft,accentColor})}/></section><section className="settings-panel"><header><Sparkles/><div><h2>Theme</h2><p>Choose a visual theme for your public profile.</p></div></header><ThemePicker value={draft.themeId} onChange={themeId=>immediate({...draft,themeId})}/></section></div><div className="settings-live-preview"><span className="eyebrow">PROFILE PREVIEW</span><TapContext.Provider value={{...store,profile:draft}}><ProfileCard card={store.cards[0]}/></TapContext.Provider><div className="real-profile-stats"><span><strong>{store.connections.length}</strong> connections</span><span><strong>{store.cards.length}</strong> cards</span></div></div></div></AppShell>;
+}
+
+function PrivacySettingsPage() {
+  const store=useTap(); const auto=useProfileAutosave(store.profile,store.setProfile);
+  return <AppShell><SettingsHeader title="Privacy Settings" subtitle="Control how people find and view your TAP." state={auto.state}/><div className="settings-stack wide"><section className="settings-panel"><header><Eye/><div><h2>Profile visibility</h2><p>Choose whether visitors can open your public profile.</p></div></header><div className="visibility-picker"><button className={auto.draft.visibility==='public'?'selected':''} onClick={()=>auto.immediate({...auto.draft,visibility:'public'})}><Eye/>Public<span>Anyone with your link can view it.</span></button><button className={auto.draft.visibility==='private'?'selected':''} onClick={()=>auto.immediate({...auto.draft,visibility:'private'})}><EyeOff/>Private<span>Only you can open your profile.</span></button></div><label className="setting-row"><span><b>Appear in profile search</b><small>Controls whether people can discover your TAP by username.</small></span><input type="checkbox" checked={auto.draft.discoverable} onChange={e=>auto.immediate({...auto.draft,discoverable:e.target.checked})}/></label></section><section className="settings-panel honest-state"><ShieldCheck/><div><h2>Per-item visibility</h2><p>Connection visibility, card visibility, and Verified Stats visibility are managed from their existing editors so the real provider and card permissions remain intact.</p><div><Link className="btn btn-secondary" to="/connections">Connections</Link><Link className="btn btn-secondary" to="/cards">Cards</Link></div></div></section></div></AppShell>;
+}
+
+function DangerZone() {
+  const { realMode }=useTap(); const nav=useNavigate(); const [deleting,setDeleting]=useState(false); const [error,setError]=useState("");
+  const remove=async()=>{if(!confirm("Permanently delete your TAP account and all data? This cannot be undone."))return;setDeleting(true);const result=await deleteAccount();setDeleting(false);if(result){setError(result);return;}await supabase?.auth.signOut();nav("/",{replace:true});};
+  return <section className="settings-panel danger-zone"><Trash2/><div><h2>Danger Zone</h2><p>Permanently delete your account, profile, connections, cards, badges, and uploaded files.</p>{error&&<small>{error}</small>}</div><Button tone="secondary" disabled={!realMode||deleting} onClick={()=>void remove()}>{deleting?"DELETING…":"DELETE ACCOUNT"}</Button></section>;
+}
+
+function SecuritySettingsPage() {
+  const { connections }=useTap(); const identity=useAccountIdentity();
+  return <AppShell><SettingsHeader title="Security Settings" subtitle="Protect your account, sessions, and verified connections."/><div className="security-settings-grid"><div className="settings-stack wide"><section className="settings-panel"><header><Mail/><div><h2>Email Address</h2><p>Your email is used for login and account recovery.</p></div></header><div className="security-value"><strong>{identity.email||"Email unavailable"}</strong>{identity.verified&&<span>✓ Verified</span>}</div></section><section className="settings-panel row-panel"><Lock/><div><h2>Password</h2><p>Change your password using Supabase’s secure recovery flow.</p></div><Link className="btn btn-secondary" to="/forgot-password">Change password</Link></section><section className="settings-panel row-panel"><ShieldCheck/><div><h2>Two-factor authentication (2FA)</h2><p>An end-to-end 2FA flow is not configured for TAP yet.</p></div><span className="coming-soon">Coming soon</span></section><section className="settings-panel honest-state"><Monitor/><div><h2>Session management</h2><p>Current session is active. Advanced device, location, and per-session management is not available from the current Supabase setup.</p></div></section></div><div className="settings-stack wide"><section className="settings-panel"><header><Link2/><div><h2>Connected OAuth accounts</h2><p>Real provider status from your TAP connections.</p></div></header><div className="compact-connections">{connections.filter(c=>c.mode==='oauth').length?connections.filter(c=>c.mode==='oauth').map(c=><div key={c.id}><ProviderMark id={c.provider}/><span><strong>{providerById(c.provider)?.name||c.displayLabel}</strong><small>{c.handle}</small></span><b>Connected</b></div>):<p>No OAuth providers connected.</p>}</div><Link className="btn btn-secondary" to="/settings/connections">Manage accounts</Link></section><section className="settings-panel honest-state"><ShieldCheck/><div><h2>Login preferences and alerts</h2><p>Configurable timeouts and login-alert emails are not backed by TAP yet.</p><span className="coming-soon">Coming soon</span></div></section></div></div><DangerZone/></AppShell>;
+}
+
+function SimpleSettingsPage({ kind }:{kind:"account"|"notifications"|"connections"|"badges"|"preferences"|"data"}) {
+  const store=useTap(); const identity=useAccountIdentity(); const nav=useNavigate(); const [reduced,setReduced]=useState(()=>localStorage.getItem("tap-reduced-motion")==="true");
+  const logout=async()=>{await supabase?.auth.signOut();nav("/login",{replace:true});};
+  if(kind==="account") return <AppShell><SettingsHeader title="Account" subtitle="Manage your email and account access."/><div className="settings-stack wide"><section className="settings-panel"><header><Mail/><div><h2>Email</h2><p>{identity.email||"Email unavailable"}</p></div></header>{identity.verified&&<span className="verified-label">✓ Verified</span>}</section><section className="settings-panel row-panel"><Lock/><div><h2>Password</h2><p>Securely change your password through account recovery.</p></div><Link className="btn btn-secondary" to="/forgot-password">Change password</Link></section><section className="settings-panel row-panel"><LogOut/><div><h2>Sign out</h2><p>End the current browser session.</p></div><Button tone="secondary" onClick={()=>void logout()}>LOG OUT</Button></section></div></AppShell>;
+  if(kind==="notifications") return <AppShell><SettingsHeader title="Notifications" subtitle="Choose what you want to be notified about."/><section className="settings-panel coming-panel"><Bell/><h2>Notifications are coming soon</h2><p>TAP does not currently have a notification delivery backend, so no non-functional toggles are shown.</p></section></AppShell>;
+  if(kind==="connections") return <AppShell><SettingsHeader title="Connected Accounts" subtitle="Review the real accounts and integrations connected to TAP."/><div className="settings-stack wide"><section className="settings-panel"><div className="compact-connections">{store.connections.length?store.connections.map(c=><div key={c.id}><ProviderMark id={c.provider}/><span><strong>{c.displayLabel}</strong><small>{c.handle} · {c.mode==='oauth'?'OAuth':'Manual'} · {c.visible?'Public':'Private'}</small></span><b className={c.state}>{c.state.replace('_',' ')}</b></div>):<p>No accounts connected yet.</p>}</div></section><Link className="btn btn-primary settings-primary-action" to="/connections">Open connection manager</Link></div></AppShell>;
+  if(kind==="badges") return <AppShell><SettingsHeader title="Badge Display" subtitle="Manage the earned badges shown on your public profile."/><section className="settings-panel"><header><Sparkles/><div><h2>{store.profile.featuredBadges.length} equipped</h2><p>Unequipping a badge never removes ownership. Locked badges cannot be equipped.</p></div></header><div className="equipped-badges">{store.profile.featuredBadges.map(id=><BadgeArt id={id} key={id}/>)}</div><Link className="btn btn-primary" to="/badges">Manage all badges</Link></section></AppShell>;
+  if(kind==="preferences") return <AppShell><SettingsHeader title="App Preferences" subtitle="Customize interface-level behavior."/><section className="settings-panel"><label className="setting-row"><span><b>Reduced motion</b><small>Reduce transitions and reveal animations. Your preference stays in this browser.</small></span><input type="checkbox" checked={reduced} onChange={e=>{setReduced(e.target.checked);localStorage.setItem("tap-reduced-motion",String(e.target.checked));document.documentElement.classList.toggle("reduce-motion",e.target.checked);}}/></label><div className="setting-row"><span><b>Profile theme</b><small>Theme selection is saved to your TAP account.</small></span><Link className="btn btn-secondary" to="/settings/profile">Choose theme</Link></div></section></AppShell>;
+  return <AppShell><SettingsHeader title="Data & Storage" subtitle="Understand how TAP stores your account data."/><div className="settings-stack wide"><section className="settings-panel"><header><Database/><div><h2>Account data</h2><p>Your profile, cards, connections, badge ownership, and preferences are stored in Supabase under your authenticated account. Uploaded avatars and custom icons use owner-scoped storage.</p></div></header></section><section className="settings-panel honest-state"><Database/><div><h2>Account export</h2><p>A complete downloadable export is not implemented yet.</p><span className="coming-soon">Coming soon</span></div></section><DangerZone/></div></AppShell>;
 }
 
 function PublicProfile() {
@@ -2822,7 +2852,7 @@ export default function App() {
           path="/edit"
           element={
             <Protected>
-              <EditProfile />
+              <Navigate to="/settings/profile" replace />
             </Protected>
           }
         />
@@ -2866,6 +2896,15 @@ export default function App() {
             </Protected>
           }
         />
+        <Route path="/settings/profile" element={<Protected><ProfileSettingsPage/></Protected>} />
+        <Route path="/settings/privacy" element={<Protected><PrivacySettingsPage/></Protected>} />
+        <Route path="/settings/security" element={<Protected><SecuritySettingsPage/></Protected>} />
+        <Route path="/settings/account" element={<Protected><SimpleSettingsPage kind="account"/></Protected>} />
+        <Route path="/settings/notifications" element={<Protected><SimpleSettingsPage kind="notifications"/></Protected>} />
+        <Route path="/settings/connections" element={<Protected><SimpleSettingsPage kind="connections"/></Protected>} />
+        <Route path="/settings/badges" element={<Protected><SimpleSettingsPage kind="badges"/></Protected>} />
+        <Route path="/settings/preferences" element={<Protected><SimpleSettingsPage kind="preferences"/></Protected>} />
+        <Route path="/settings/data" element={<Protected><SimpleSettingsPage kind="data"/></Protected>} />
         <Route path="/u/:username" element={<PublicProfile />} />
         <Route path="/help/badges" element={<HelpPage topic="badges" />} />
         <Route path="/help/levels" element={<HelpPage topic="levels" />} />
