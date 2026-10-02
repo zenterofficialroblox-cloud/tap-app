@@ -18,6 +18,9 @@ const appUrl =
   (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, "") ||
   location.origin;
 export const isSupabaseConfigured = Boolean(url && key);
+const authStorageKey = url
+  ? `sb-${new URL(url).hostname.split(".")[0]}-auth-token`
+  : "tap-auth-session";
 export const supabase = isSupabaseConfigured
   ? createClient(url!, key!, {
       auth: {
@@ -25,6 +28,8 @@ export const supabase = isSupabaseConfigured
         autoRefreshToken: true,
         detectSessionInUrl: true,
         flowType: "pkce",
+        storage: window.localStorage,
+        storageKey: authStorageKey,
       },
     })
   : null;

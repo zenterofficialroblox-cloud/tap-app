@@ -587,6 +587,10 @@ function DemoProfileCard() {
 }
 
 function Landing() {
+  const { ready, authenticated, profile, realMode } = useTap();
+  if (realMode && !ready) return <RouteLoading label="Restoring your TAP…" />;
+  if (realMode && authenticated)
+    return <Navigate to={isProfileComplete(profile) ? "/app" : "/onboarding"} replace />;
   return (
     <main className="landing">
       <header className="topbar">
@@ -842,6 +846,7 @@ function AvatarPicker({
 }
 
 function AuthPage({ register = false }: { register?: boolean }) {
+  const { ready, authenticated, profile, realMode } = useTap();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -853,6 +858,9 @@ function AuthPage({ register = false }: { register?: boolean }) {
     /[A-Za-z]/.test(password),
     /[0-9]/.test(password),
   ].filter(Boolean).length;
+  if (realMode && !ready) return <RouteLoading label="Restoring your TAP…" />;
+  if (realMode && authenticated)
+    return <Navigate to={isProfileComplete(profile) ? "/app" : "/onboarding"} replace />;
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
