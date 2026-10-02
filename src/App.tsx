@@ -49,6 +49,8 @@ import {
   UsersRound,
   Trash2,
   Monitor,
+  Plus,
+  Minus,
   Gamepad2,
   Code2,
   Play,
@@ -446,7 +448,7 @@ function Avatar({
           onError={() => setFailed(profile.avatarUrl || "")}
           alt=""
         />
-      ) : profile.avatarMode === "icon" ? <span className={`avatar-symbol avatar-symbol-${profile.avatarIconId}`}>{profile.avatarIconId==='bolt'?<Zap/>:profile.avatarIconId==='gamepad'?<Gamepad2/>:profile.avatarIconId==='headphones'?<Headphones/>:profile.avatarIconId==='code'?<Code2/>:<Orbit/>}</span> : <span className="preset-art" aria-hidden="true" />}
+      ) : profile.avatarMode === "icon" ? <span className={`avatar-symbol avatar-symbol-${profile.avatarIconId}`}>{profile.avatarIconId==='bolt'?<Zap/>:profile.avatarIconId==='gamepad'?<Gamepad2/>:profile.avatarIconId==='headphones'?<Headphones/>:profile.avatarIconId==='code'?<Code2/>:<Orbit/>}</span> : <span className="preset-art" aria-hidden="true">{profile.defaultAvatarId==='cosmic'?<UserRound/>:profile.defaultAvatarId==='robot'?<Monitor/>:profile.defaultAvatarId==='fox'?<Sparkles/>:profile.defaultAvatarId==='crystal'?<Orbit/>:<Gamepad2/>}</span>}
     </div>
   );
 }
@@ -475,6 +477,19 @@ function BadgeArt({id,size="card"}:{id:string;size?:"tiny"|"card"|"help"}){
   const badge=badges.find(item=>item.id===id);
   if(!badge)return null;
   return <img className={`badge-art badge-art-${size}`} src={badge.icon} alt="" loading="lazy" decoding="async" aria-hidden="true"/>;
+}
+const baseThemeIds = ["default", "neon", "galaxy", "pixel", "frost"] as const;
+const themeRows: Record<string, number> = {default:0,neon:1,galaxy:2,pixel:3,frost:4,sunset:1,ocean:1,forest:1,rose:1,lavender:1,cyber:2,matrix:2,ruby:2,sapphire:2,amber:2,mint:3,cotton:3,bubble:3,lime:3,peach:3,midnight:4,aurora:4,volcano:4,meadow:4,sand:4};
+const themeColumns: Record<string, number> = {default:0,neon:1,galaxy:2,pixel:3,frost:4,sunset:0,ocean:1,forest:2,rose:3,lavender:4,cyber:0,matrix:1,ruby:2,sapphire:3,amber:4,mint:0,cotton:1,bubble:2,lime:3,peach:4,midnight:0,aurora:1,volcano:2,meadow:3,sand:4};
+function themeWallpaperStyle(themeId:string, variant=0){
+  const isBase=(baseThemeIds as readonly string[]).includes(themeId);
+  const column=isBase?Math.min(5,Math.max(0,variant)):themeColumns[themeId]??0;
+  const row=isBase?themeRows[themeId]??0:themeRows[themeId]??0;
+  return {
+    "--theme-wallpaper":`url(${isBase?'/themes/base-variants.png':'/themes/theme-wallpapers.png'})`,
+    "--theme-size":isBase?'600% 500%':'500% 500%',
+    "--theme-position":`${column*(isBase?20:25)}% ${row*25}%`,
+  } as React.CSSProperties;
 }
 function ProfileCard({
   compact = false,
@@ -506,7 +521,7 @@ function ProfileCard({
   return (
     <article
       className={`profile-card theme-${profile.themeId} ${compact ? "profile-card-compact" : ""} ${bioExpanded || badgesExpanded ? "profile-card-expanded" : ""}`}
-      style={{ "--accent": profile.accentColor } as React.CSSProperties}
+      style={{ "--accent": profile.accentColor, ...themeWallpaperStyle(profile.themeId, profile.themeVariant) } as React.CSSProperties}
     >
       <div className="card-shine" />
       <div className="profile-identity">
@@ -758,11 +773,11 @@ function AccentPicker({
   );
 }
 const themes = [
-  ["default", "Default", "Clean violet depth"],
-  ["neon", "Neon", "Bright & vibrant"],
-  ["galaxy", "Galaxy", "Cosmic gradients"],
-  ["pixel", "Pixel", "Retro & playful"],
-  ["frost", "Frost", "Cool & minimal"],
+  ["default","Default","Clean violet depth"],["neon","Neon","Bright & vibrant"],["galaxy","Galaxy","Cosmic gradients"],["pixel","Pixel","Retro & playful"],["frost","Frost","Cool & minimal"],
+  ["sunset","Sunset","Warm & cozy"],["ocean","Ocean","Calm & smooth"],["forest","Forest","Natural & fresh"],["rose","Rose","Soft & modern"],["lavender","Lavender","Dreamy & calm"],
+  ["cyber","Cyber","Futuristic & sharp"],["matrix","Matrix","Dark & digital"],["ruby","Ruby","Bold & glossy"],["sapphire","Sapphire","Sleek & elegant"],["amber","Amber","Royal & rich"],
+  ["mint","Mint","Fresh & clean"],["cotton","Cotton","Light & soft"],["bubble","Bubble","Fun & cheerful"],["lime","Lime","Crisp & energetic"],["peach","Peach","Friendly & warm"],
+  ["midnight","Midnight","Dark & calm"],["aurora","Aurora","Colorful & fluid"],["volcano","Volcano","Intense & bold"],["meadow","Meadow","Natural & soft"],["sand","Sand","Clean & minimal"],
 ] as const;
 function ThemePicker({
   value,
@@ -771,11 +786,13 @@ function ThemePicker({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const [expanded,setExpanded]=useState(false);
+  const visibleThemes=expanded?themes:themes.slice(0,5);
   return (
     <fieldset className="theme-picker">
       <legend>Theme</legend>
       <div className="theme-cards">
-        {themes.map(([id, name, desc]) => (
+        {visibleThemes.map(([id, name, desc]) => (
           <button
             type="button"
             className={value === id ? "selected" : ""}
@@ -783,7 +800,7 @@ function ThemePicker({
             aria-pressed={value === id}
             key={id}
           >
-            <i className={`theme-preview ${id}`} style={{backgroundImage:`url(/themes/${id}.webp)`}}>
+            <i className={`theme-preview ${id}`} style={themeWallpaperStyle(id,0)}>
               <b />
               <span />
               <em />
@@ -793,6 +810,7 @@ function ThemePicker({
             {value === id && <Check />}
           </button>
         ))}
+        <button type="button" className={`theme-expand ${expanded?'expanded':''}`} onClick={()=>setExpanded(value=>!value)} aria-label={expanded?'Show fewer themes':'Show all themes'} aria-expanded={expanded}>{expanded?<Minus/>:<Plus/>}</button>
       </div>
     </fieldset>
   );
@@ -851,6 +869,7 @@ function AvatarPicker({
             className="sr-only"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            onClick={(e)=>{e.currentTarget.value=""}}
             onChange={(e) => onUpload(e.target.files?.[0])}
           />
         </label>
@@ -2627,6 +2646,11 @@ function PublicProfile() {
   const [switchingCard, setSwitchingCard] = useState(false);
   const hasPublicData = useRef(false);
   const navigate = useNavigate();
+  const openCard = (slug:string) => {
+    if (switchingCard || slug === cardSlug) return;
+    setSwitchingCard(true);
+    window.setTimeout(() => navigate(`/u/${encodeURIComponent(username)}?card=${encodeURIComponent(slug)}`), 260);
+  };
   useEffect(() => {
     let active = true;
     if (!isSupabaseConfigured || isDemoUsername(username)) return;
@@ -2756,9 +2780,7 @@ function PublicProfile() {
                     key={card.slug}
                     aria-current={active ? "page" : undefined}
                     disabled={active || switchingCard}
-                    onClick={() =>
-                      navigate(`/u/${encodeURIComponent(data.profile.username)}?card=${encodeURIComponent(card.slug)}`)
-                    }
+                    onClick={() => openCard(card.slug)}
                   >
                     <strong>{card.name}</strong>
                     <span>{active ? "ACTIVE CARD" : "OPEN CARD"}</span>

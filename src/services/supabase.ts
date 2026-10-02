@@ -146,7 +146,7 @@ export async function connectOAuth(provider: "github" | "youtube") {
 
 const safeImageUrl = (value: unknown) =>
   typeof value === "string" && hasValidDestination(value) ? value : undefined;
-const allowedThemes = new Set(["default", "neon", "galaxy", "pixel", "frost"]);
+const allowedThemes = new Set(["default", "neon", "galaxy", "pixel", "frost", "sunset", "ocean", "forest", "rose", "lavender", "cyber", "matrix", "ruby", "sapphire", "amber", "mint", "cotton", "bubble", "lime", "peach", "midnight", "aurora", "volcano", "meadow", "sand"]);
 const mapProfile = (data: Record<string, unknown>): Profile => ({
   username: String(data.username || ""),
   displayName: String(data.display_name || ""),
@@ -165,6 +165,9 @@ const mapProfile = (data: Record<string, unknown>): Profile => ({
   themeId: allowedThemes.has(String(data.theme_id))
     ? String(data.theme_id)
     : "default",
+  themeVariant: Number.isInteger(Number(data.theme_variant))
+    ? Math.min(5, Math.max(0, Number(data.theme_variant)))
+    : 0,
   visibility: data.visibility === "private" ? "private" : "public",
   xp: Number.isFinite(Number(data.xp))
     ? Math.max(0, Math.floor(Number(data.xp)))
@@ -240,7 +243,7 @@ export async function loadAppData(): Promise<AppData> {
       supabase
         .from("profiles")
         .select(
-          "username,display_name,bio,avatar_url,avatar_mode,default_avatar_id,avatar_icon_id,avatar_icon_color,avatar_background_color,avatar_background_color_2,discoverable,accent_color,theme_id,visibility,xp,onboarding_complete",
+          "username,display_name,bio,avatar_url,avatar_mode,default_avatar_id,avatar_icon_id,avatar_icon_color,avatar_background_color,avatar_background_color_2,discoverable,accent_color,theme_id,theme_variant,visibility,xp,onboarding_complete",
         )
         .eq("user_id", user.id)
         .maybeSingle(),
